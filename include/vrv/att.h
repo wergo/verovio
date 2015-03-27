@@ -99,14 +99,21 @@ public:
     ///@{
     double StrToDbl(std::string value);
     int StrToInt(std::string value);
-    
-    /** @name Converters for writing and reading */
+
+    /** @name Specific method excluded from the ODD */
     ///@{
+    
+    std::string DurToStr(data_DURATION data);
+    data_DURATION StrToDur(std::string value);
+    
+    ///@}
+    
+    //-------------------------------------------------------------------//
+    // Inclusion of the definition of the methods generated from the ODD //
+    //-------------------------------------------------------------------//
 
     #include "att_converters.h"
     
-    ///@}
-
 };
     
 //----------------------------------------------------------------------------

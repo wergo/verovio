@@ -1,9 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
-// Authors:     Laurent Pugin and Rodolfo Zitellini
+// Authors:     Johannes Kepper and Laurent Pugin
 // Created:     2014
 // Copyright (c) Authors and others. All rights reserved.
-//
-// Code generated using a XSL stylesheet written by Johannes Kepper
 /////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
@@ -30,9 +28,6 @@ data_CLEFSHAPE StrToClefShape(std::string value);
 
 std::string ConToStr(data_CON data);
 data_CON StrToCon(std::string value);
-
-std::string DurToStr(data_DURATION data);
-data_DURATION StrToDur(std::string value);
 
 std::string FontstyleToStr(data_FONTSTYLE data);
 data_FONTSTYLE StrToFontstyle(std::string value);
