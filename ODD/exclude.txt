@@ -1,0 +1,9 @@
+data.DURATION
+data.DURATION.cmn
+data.DURATION.mensural
+data.KEYSIGNATURE
+data.MODUSMAIOR
+data.MODUSMINOR
+data.OCTAVE.DIS
+data.PROLATIO
+data.TEMPUS
