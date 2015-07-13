@@ -60,6 +60,62 @@ int Att::StrToInt(std::string value)
 }
 
 // Converters for writing and reading not generated from the ODD (see ./libmei/att_converters)
+// Converters for writing and reading
+
+std::string Att::AccidentalExplicitToStr(data_ACCIDENTAL_EXPLICIT data)
+{
+    std::string value;
+    switch(data)
+    {
+        case ACCIDENTAL_EXPLICIT_s : value = "s"; break;
+        case ACCIDENTAL_EXPLICIT_f : value = "f"; break;
+        case ACCIDENTAL_EXPLICIT_ss : value = "ss"; break;
+        case ACCIDENTAL_EXPLICIT_x : value = "x"; break;
+        case ACCIDENTAL_EXPLICIT_ff : value = "ff"; break;
+        case ACCIDENTAL_EXPLICIT_xs : value = "xs"; break;
+        case ACCIDENTAL_EXPLICIT_ts : value = "ts"; break;
+        case ACCIDENTAL_EXPLICIT_tf : value = "tf"; break;
+        case ACCIDENTAL_EXPLICIT_n : value = "n"; break;
+        case ACCIDENTAL_EXPLICIT_nf : value = "nf"; break;
+        case ACCIDENTAL_EXPLICIT_ns : value = "ns"; break;
+        case ACCIDENTAL_EXPLICIT_su : value = "su"; break;
+        case ACCIDENTAL_EXPLICIT_sd : value = "sd"; break;
+        case ACCIDENTAL_EXPLICIT_fu : value = "fu"; break;
+        case ACCIDENTAL_EXPLICIT_fd : value = "fd"; break;
+        case ACCIDENTAL_EXPLICIT_nu : value = "nu"; break;
+        case ACCIDENTAL_EXPLICIT_nd : value = "nd"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_ACCIDENTAL_EXPLICIT Att::StrToAccidentalExplicit(std::string value)
+{
+    if (value == "s") return ACCIDENTAL_EXPLICIT_s;
+    else if (value == "f") return ACCIDENTAL_EXPLICIT_f;
+    else if (value == "ss") return ACCIDENTAL_EXPLICIT_ss;
+    else if (value == "x") return ACCIDENTAL_EXPLICIT_x;
+    else if (value == "ff") return ACCIDENTAL_EXPLICIT_ff;
+    else if (value == "xs") return ACCIDENTAL_EXPLICIT_xs;
+    else if (value == "ts") return ACCIDENTAL_EXPLICIT_ts;
+    else if (value == "tf") return ACCIDENTAL_EXPLICIT_tf;
+    else if (value == "n") return ACCIDENTAL_EXPLICIT_n;
+    else if (value == "nf") return ACCIDENTAL_EXPLICIT_nf;
+    else if (value == "ns") return ACCIDENTAL_EXPLICIT_ns;
+    else if (value == "su") return ACCIDENTAL_EXPLICIT_su;
+    else if (value == "sd") return ACCIDENTAL_EXPLICIT_sd;
+    else if (value == "fu") return ACCIDENTAL_EXPLICIT_fu;
+    else if (value == "fd") return ACCIDENTAL_EXPLICIT_fd;
+    else if (value == "nu") return ACCIDENTAL_EXPLICIT_nu;
+    else if (value == "nd") return ACCIDENTAL_EXPLICIT_nd;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return ACCIDENTAL_EXPLICIT_NONE;
+}
     
 std::string Att::DurToStr(data_DURATION data)
 {
@@ -122,6 +178,594 @@ data_DURATION Att::StrToDur(std::string value)
         dur = DURATION_NONE;
     }
     return dur;
+}
+    
+std::string Att::FontstyleToStr(data_FONTSTYLE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case FONTSTYLE_italic : value = "italic"; break;
+        case FONTSTYLE_normal : value = "normal"; break;
+        case FONTSTYLE_oblique : value = "oblique"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_FONTSTYLE Att::StrToFontstyle(std::string value)
+{
+    if (value == "italic") return FONTSTYLE_italic;
+    else if (value == "normal") return FONTSTYLE_normal;
+    else if (value == "oblique") return FONTSTYLE_oblique;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return FONTSTYLE_NONE;
+}
+
+std::string Att::FontweightToStr(data_FONTWEIGHT data)
+{
+    std::string value;
+    switch(data)
+    {
+        case FONTWEIGHT_bold : value = "bold"; break;
+        case FONTWEIGHT_normal : value = "normal"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_FONTWEIGHT Att::StrToFontweight(std::string value)
+{
+    if (value == "bold") return FONTWEIGHT_bold;
+    else if (value == "normal") return FONTWEIGHT_normal;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return FONTWEIGHT_NONE;
+}
+    
+std::string Att::KeySignatureToStr(data_KEYSIGNATURE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case KEYSIGNATURE_7f : value = "7f"; break;
+        case KEYSIGNATURE_6f : value = "6f"; break;
+        case KEYSIGNATURE_5f : value = "5f"; break;
+        case KEYSIGNATURE_4f : value = "4f"; break;
+        case KEYSIGNATURE_3f : value = "3f"; break;
+        case KEYSIGNATURE_2f : value = "2f"; break;
+        case KEYSIGNATURE_1f : value = "1f"; break;
+        case KEYSIGNATURE_0 : value = "0"; break;
+        case KEYSIGNATURE_1s : value = "1s"; break;
+        case KEYSIGNATURE_2s : value = "2s"; break;
+        case KEYSIGNATURE_3s : value = "3s"; break;
+        case KEYSIGNATURE_4s : value = "4s"; break;
+        case KEYSIGNATURE_5s : value = "5s"; break;
+        case KEYSIGNATURE_6s : value = "6s"; break;
+        case KEYSIGNATURE_7s : value = "7s"; break;
+        case KEYSIGNATURE_mixed : value = "mixed"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_KEYSIGNATURE Att::StrToKeySignature(std::string value)
+{
+	if (value == "7f") return KEYSIGNATURE_7f;
+	else if (value == "6f") return KEYSIGNATURE_6f;
+	else if (value == "5f") return KEYSIGNATURE_5f;
+	else if (value == "4f") return KEYSIGNATURE_4f;
+	else if (value == "3f") return KEYSIGNATURE_3f;
+	else if (value == "2f") return KEYSIGNATURE_2f;
+	else if (value == "1f") return KEYSIGNATURE_1f;
+	else if (value == "0") return KEYSIGNATURE_0;
+	else if (value == "1s") return KEYSIGNATURE_1s;
+	else if (value == "2s") return KEYSIGNATURE_2s;
+	else if (value == "3s") return KEYSIGNATURE_3s;
+	else if (value == "4s") return KEYSIGNATURE_4s;
+	else if (value == "5s") return KEYSIGNATURE_5s;
+	else if (value == "6s") return KEYSIGNATURE_6s;
+	else if (value == "7s") return KEYSIGNATURE_7s;
+	else if (value == "mixed") return KEYSIGNATURE_mixed;
+	else {
+		LogWarning("Unsupported pitch name '%s'", value.c_str() );
+	}
+	return KEYSIGNATURE_NONE;
+}
+    
+std::string Att::LayerschemeToStr(data_LAYERSCHEME data)
+{
+    std::string value;
+    switch(data)
+    {
+        case LAYERSCHEME_1 : value = "1"; break;
+        case LAYERSCHEME_2o : value = "2o"; break;
+        case LAYERSCHEME_2f : value = "2f"; break;
+        case LAYERSCHEME_3o : value = "3o"; break;
+        case LAYERSCHEME_3f : value = "3f"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_LAYERSCHEME Att::StrToLayerscheme(std::string value)
+{
+    if (value == "1") return LAYERSCHEME_1;
+    else if (value == "2o") return LAYERSCHEME_2o;
+    else if (value == "2f") return LAYERSCHEME_2f;
+    else if (value == "3o") return LAYERSCHEME_3o;
+    else if (value == "3f") return LAYERSCHEME_3f;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return LAYERSCHEME_NONE;
+}
+    
+std::string Att::LigatureToStr(data_LIGATURE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case LIGATURE_recta : value = "recta"; break;
+        case LIGATURE_obliqua : value = "obliqua"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_LIGATURE Att::StrToLigature(std::string value)
+{
+    if (value == "recta") return LIGATURE_recta;
+    else if (value == "obliqua") return LIGATURE_obliqua;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return LIGATURE_NONE;
+}
+    
+std::string Att::MensurationSignToStr( data_MENSURATIONSIGN data )
+{
+    std::string value;
+    switch(data)
+    {
+        case MENSURATIONSIGN_C : value = "C"; break;
+        case MENSURATIONSIGN_O : value = "O"; break;
+        default:
+            LogWarning("Unknown mensur sign '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_MENSURATIONSIGN Att::StrToMensurationSign(std::string value)
+{
+    if (value == "C") return MENSURATIONSIGN_C;
+    else if (value == "O") return MENSURATIONSIGN_O;
+    else {
+        LogWarning("Unsupported mensur sign '%s'", value.c_str() );
+    }
+    // default
+    return MENSURATIONSIGN_C;
+}
+
+std::string Att::MeterSignToStr(data_METERSIGN data)
+{
+    std::string value;
+    switch(data)
+    {
+        case METERSIGN_common : value = "common"; break;
+        case METERSIGN_cut : value = "cut"; break;
+        default:
+            LogWarning("Unknown meterSig sym '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_METERSIGN Att::StrToMeterSign(std::string value)
+{
+    if (value == "common") return METERSIGN_common;
+    else if (value == "cut") return METERSIGN_cut;
+    else {
+        LogWarning("Unsupported meter sign '%s'", value.c_str() );
+    }
+    // default
+    return METERSIGN_NONE;
+}
+    
+std::string Att::ModeToStr(data_MODE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case MODE_major : value = "major"; break;
+        case MODE_minor : value = "minor"; break;
+        case MODE_dorian : value = "dorian"; break;
+        case MODE_phrygian : value = "phrygian"; break;
+        case MODE_lydian : value = "lydian"; break;
+        case MODE_mixolydian : value = "mixolydian"; break;
+        case MODE_aeolian : value = "aeolian"; break;
+        case MODE_locrian : value = "locrian"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_MODE Att::StrToMode(std::string value)
+{
+    if (value == "major") return MODE_major;
+    else if (value == "minor") return MODE_minor;
+    else if (value == "dorian") return MODE_dorian;
+    else if (value == "phrygian") return MODE_phrygian;
+    else if (value == "lydian") return MODE_lydian;
+    else if (value == "mixolydian") return MODE_mixolydian;
+    else if (value == "aeolian") return MODE_aeolian;
+    else if (value == "locrian") return MODE_locrian;
+    else {
+        LogWarning("Unsupported mode '%s'", value.c_str() );
+    }
+    // default
+    return MODE_NONE;
+}
+
+std::string Att::ModusmaiorToStr(data_MODUSMAIOR data)
+{
+    std::string value;
+    switch(data)
+    {
+        case MODUSMAIOR_2 : value = "2"; break;
+        case MODUSMAIOR_3 : value = "3"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_MODUSMAIOR Att::StrToModusmaior(std::string value)
+{
+    if (value == "2") return MODUSMAIOR_2;
+    else if (value == "3") return MODUSMAIOR_3;
+    else {
+        LogWarning("Unsupported mode '%s'", value.c_str() );
+    }
+    // default
+    return MODUSMAIOR_NONE;
+}
+
+std::string Att::ModusminorToStr(data_MODUSMINOR data)
+{
+    std::string value;
+    switch(data)
+    {
+        case MODUSMINOR_2 : value = "2"; break;
+        case MODUSMINOR_3 : value = "3"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_MODUSMINOR Att::StrToModusminor(std::string value)
+{
+    if (value == "2") return MODUSMINOR_2;
+    else if (value == "3") return MODUSMINOR_3;
+    else {
+        LogWarning("Unsupported mode '%s'", value.c_str() );
+    }
+    // default
+    return MODUSMINOR_NONE;
+}
+    
+std::string Att::OctaveDisToStr( data_OCTAVE_DIS data )
+{
+    std::string value;
+    switch(data)
+    {
+        case OCTAVE_DIS_8 : value = "8"; break;
+        case OCTAVE_DIS_15 : value = "15"; break;
+        case OCTAVE_DIS_22 : value = "22"; break;
+        default:
+            LogWarning("Unknown octave dis '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_OCTAVE_DIS Att::StrToOctaveDis(std::string value)
+{
+    if (value == "8") return OCTAVE_DIS_8;
+    else if (value == "15") return OCTAVE_DIS_15;
+    else if (value == "22") return OCTAVE_DIS_22;
+    else {
+        LogWarning("Unsupported octave dis '%s'", value.c_str() );
+    }
+    // default
+    return OCTAVE_DIS_NONE;
+}
+    
+std::string Att::OrientationToStr(data_ORIENTATION data)
+{
+    std::string value;
+    switch(data)
+    {
+        case ORIENTATION_reversed : value = "reversed"; break;
+        case ORIENTATION_90CW : value = "90CW"; break;
+        case ORIENTATION_90CCW : value = "90CCW"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_ORIENTATION Att::StrToOrientation(std::string value)
+{
+	if (value == "reversed") return ORIENTATION_reversed;
+	else if (value == "90CW") return ORIENTATION_90CW;
+	else if (value == "90CCW") return ORIENTATION_90CCW;
+	else {
+		LogWarning("Unsupported pitch name '%s'", value.c_str() );
+	}
+	return ORIENTATION_NONE;
+}
+    
+std::string Att::PitchNameToStr(data_PITCHNAME data)
+{
+    std::string value;
+    switch(data)
+    {
+        case PITCHNAME_c : value = "c"; break;
+        case PITCHNAME_d : value = "d"; break;
+        case PITCHNAME_e : value = "e"; break;
+        case PITCHNAME_f : value = "f"; break;
+        case PITCHNAME_g : value = "g"; break;
+        case PITCHNAME_a : value = "a"; break;
+        case PITCHNAME_b : value = "b"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_PITCHNAME Att::StrToPitchName(std::string value)
+{
+    if (value == "c") return PITCHNAME_c;
+    else if (value == "d") return PITCHNAME_d;
+    else if (value == "e") return PITCHNAME_e;
+    else if (value == "f") return PITCHNAME_f;
+    else if (value == "g") return PITCHNAME_g;
+    else if (value == "a") return PITCHNAME_a;
+    else if (value == "b") return PITCHNAME_b;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    // default
+    return PITCHNAME_NONE;
+}
+    
+std::string Att::PlaceToStr( data_PLACE data )
+{
+    std::string value;
+    switch(data)
+    {
+        case PLACE_above : value = "above"; break;
+        case PLACE_below : value = "below"; break;
+        default:
+            LogWarning("Unknown place '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_PLACE Att::StrToPlace(std::string value)
+{
+    if (value == "below") return PLACE_below;
+    else if (value == "above") return PLACE_above;
+    else {
+        LogWarning("Unsupported place '%s'", value.c_str() );
+    }
+    // default
+    return PLACE_NONE;
+}
+
+std::string Att::ProlatioToStr(data_PROLATIO data)
+{
+    std::string value;
+    switch(data)
+    {
+        case PROLATIO_2 : value = "2"; break;
+        case PROLATIO_3 : value = "3"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_PROLATIO Att::StrToProlatio(std::string value)
+{
+    if (value == "2") return PROLATIO_2;
+    else if (value == "3") return PROLATIO_3;
+    else {
+        LogWarning("Unsupported mode '%s'", value.c_str() );
+    }
+    // default
+    return PROLATIO_NONE;
+}
+
+std::string Att::StemDirectionToStr(data_STEMDIRECTION data)
+{
+    std::string value;
+    switch(data)
+    {
+        case STEMDIRECTION_up : value = "up"; break;
+        case STEMDIRECTION_down : value = "down"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_STEMDIRECTION Att::StrToStemDirection(std::string value)
+{
+    if (value == "up") return STEMDIRECTION_up;
+    else if (value == "down") return STEMDIRECTION_down;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return STEMDIRECTION_NONE;
+}
+
+std::string Att::StemPositionToStr(data_STEMPOSITION data)
+{
+    std::string value;
+    switch(data)
+    {
+        case STEMPOSITION_left : value = "left"; break;
+        case STEMPOSITION_right : value = "right"; break;
+        case STEMPOSITION_center : value = "center"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_STEMPOSITION Att::StrToStemPosition(std::string value)
+{
+    if (value == "left") return STEMPOSITION_left;
+    else if (value == "right") return STEMPOSITION_right;
+    else if (value == "center") return STEMPOSITION_center;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return STEMPOSITION_NONE;
+}    
+
+std::string Att::TieToStr(data_TIE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case TIE_i : value = "i"; break;
+        case TIE_m : value = "m"; break;
+        case TIE_t : value = "t"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+std::string Att::TempusToStr(data_TEMPUS data)
+{
+    std::string value;
+    switch(data)
+    {
+        case TEMPUS_2 : value = "2"; break;
+        case TEMPUS_3 : value = "3"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_TEMPUS Att::StrToTempus(std::string value)
+{
+    if (value == "2") return TEMPUS_2;
+    else if (value == "3") return TEMPUS_3;
+    else {
+        LogWarning("Unsupported mode '%s'", value.c_str() );
+    }
+    // default
+    return TEMPUS_NONE;
+}
+
+data_TIE Att::StrToTie(std::string value)
+{
+    if (value == "i") return TIE_i;
+    else if (value == "m") return TIE_m;
+    else if (value == "t") return TIE_t;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return TIE_NONE;
+}
+    
+std::string Att::Tstamp2ToStr(typedef_TSTAMP2 data)
+{
+    return "0m0.0";
+}
+    
+typedef_TSTAMP2 Att::StrToTstamp2(std::string value)
+{
+    return std::make_pair(0, 1.0);
+}
+
+std::string Att::WordPosToStr(data_WORDPOS data)
+{
+    std::string value;
+    switch(data)
+    {
+        case WORDPOS_i : value = "i"; break;
+        case WORDPOS_m : value = "m"; break;
+        case WORDPOS_t : value = "t"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_WORDPOS Att::StrToWordPos(std::string value)
+{
+    if (value == "i") return WORDPOS_i;
+    else if (value == "m") return WORDPOS_m;
+    else if (value == "t") return WORDPOS_t;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return WORDPOS_NONE;
 }
     
 //----------------------------------------------------------------------------

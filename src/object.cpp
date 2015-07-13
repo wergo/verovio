@@ -149,8 +149,32 @@ int Object::GetChildCount( const std::type_info *elementType )
 {
     return (int)count_if (m_children.begin(), m_children.end(), ObjectComparison( elementType ));
 }
+
+int Object::GetAttributes(ArrayOfStrAttr *attributes)
+{
+    assert(attributes);
+    attributes->clear();
     
+    Att::GetCmn(this, attributes );
+    Att::GetMensural(this, attributes );
+    Att::GetPagebased(this, attributes );
+    Att::GetShared(this, attributes );
     
+    return (int)attributes->size();
+}
+    
+bool Object::HasAttribute( std::string attribute, std::string value )
+{
+    ArrayOfStrAttr attributes;
+    this->GetAttributes( &attributes );
+    ArrayOfStrAttr::iterator iter;
+    for (iter = attributes.begin(); iter != attributes.end(); iter++) {
+        if ( ( (*iter).first == attribute ) && ( (*iter).second == value ) ) return true;
+    }
+    return false;
+}
+    
+        
 Object* Object::GetFirst( const std::type_info *elementType )
 {
     m_iteratorElementType = elementType;
@@ -285,6 +309,8 @@ void Object::AddEditorialElement( EditorialElement *child )
         || dynamic_cast<Layer*>(this)
         || dynamic_cast<LayerElement*>(this)
         || dynamic_cast<Note*>(this)
+        || dynamic_cast<Lem*>(this)
+        || dynamic_cast<Rdg*>(this)
            );
     child->SetParent( this );
     m_children.push_back( child );
@@ -324,12 +350,12 @@ void Object::Modify( bool modified )
     m_isModified = modified;
 }
 
-void Object::FillList( ListOfObjects *list )
+void Object::FillFlatList( ListOfObjects *flatList )
 {
-    Functor addToList( &Object::AddLayerElementToList );
+    Functor addToFlatList( &Object::AddLayerElementToFlatList );
     ArrayPtrVoid params;
-    params.push_back ( &list );
-    this->Process( &addToList, params );
+    params.push_back ( &flatList );
+    this->Process( &addToFlatList, params );
 
     /* // For debuging
     ListOfObjects::iterator iter;
@@ -491,6 +517,11 @@ void Object::Process(Functor *functor, ArrayPtrVoid params, Functor *endFunctor,
         return;
     }
     
+    EditorialElement *editorialElement = dynamic_cast<EditorialElement*>(this);
+    if (functor->m_visibleOnly && editorialElement && ( editorialElement->m_visibility == Hidden ) ) {
+        return;
+    }
+    
     functor->Call( this, params );
     
     // do not go any deeper in this case
@@ -563,6 +594,8 @@ int Object::Save( FileOutputStream *output )
     params.push_back( output );
     
     Functor save( &Object::Save );
+    // Special case where we want to process all objects
+    save.m_visibleOnly = false;
     Functor saveEnd( &Object::SaveEnd );
     this->Process( &save, params, &saveEnd );
     
@@ -707,7 +740,7 @@ void ObjectListInterface::ResetList( Object *node )
     
     node->Modify( false );
     m_list.clear();
-    node->FillList( &m_list );
+    node->FillFlatList( &m_list );
     this->FilterList( &m_list );
 }
 
@@ -732,6 +765,24 @@ int ObjectListInterface::GetListIndex( const Object *listElement )
     return -1;
 }
 
+    
+Object* ObjectListInterface::GetListFirst(const Object *startFrom, const std::type_info *elementType)
+{
+    ListOfObjects::iterator it = m_list.begin();
+    std::advance(it, GetListIndex(startFrom));
+    it = std::find_if(it, m_list.end(), ObjectComparison( elementType ) );
+    return (it == m_list.end()) ? NULL : *it;
+}
+    
+Object* ObjectListInterface::GetListFirstBackward(Object *startFrom, const std::type_info *elementType)
+{
+    ListOfObjects::iterator it = m_list.begin();
+    std::advance(it, GetListIndex(startFrom));
+    ListOfObjects::reverse_iterator rit(it);
+    rit = std::find_if(rit, m_list.rend(), ObjectComparison( elementType ) );
+    return (rit == m_list.rend()) ? NULL : *rit;
+}
+    
 Object *ObjectListInterface::GetListPrevious( const Object *listElement )
 {
     ListOfObjects::iterator iter;
@@ -777,14 +828,14 @@ Object *ObjectListInterface::GetListNext( const Object *listElement )
 Functor::Functor( )
 { 
     m_returnCode = FUNCTOR_CONTINUE;
-    m_reverse = false;
+    m_visibleOnly = true;
     obj_fpt = NULL; 
 }
 
 Functor::Functor( int(Object::*_obj_fpt)( ArrayPtrVoid ))
 { 
     m_returnCode = FUNCTOR_CONTINUE;
-    m_reverse = false;
+    m_visibleOnly = true;
     obj_fpt = _obj_fpt; 
 }
 
@@ -798,7 +849,7 @@ void Functor::Call( Object *ptr, ArrayPtrVoid params )
 // Object functor methods
 //----------------------------------------------------------------------------
 
-int Object::AddLayerElementToList( ArrayPtrVoid params )
+int Object::AddLayerElementToFlatList( ArrayPtrVoid params )
 {
     // param 0: the ListOfObjects
     ListOfObjects **list = static_cast<ListOfObjects**>(params[0]);
@@ -968,7 +1019,7 @@ int Object::SetCurrentScoreDef( ArrayPtrVoid params )
     
     // starting a new keysig
     KeySig *keysig = dynamic_cast<KeySig*>(this);
-    if ( keysig  ) {
+    if ( keysig ) {
         assert( *currentStaffDef );
         (*currentStaffDef)->ReplaceKeySig( keysig );
         return FUNCTOR_CONTINUE;
@@ -1054,8 +1105,7 @@ int Object::SetBoundingBoxXShift( ArrayPtrVoid params )
     assert( current->GetAlignment() );
 
     if ( !current->HasUpdatedBB() ) {
-        // this is all we need for empty elements
-        current->GetAlignment()->SetXRel(*min_pos);
+        // if nothing was drawn, do not take it into account
         return FUNCTOR_CONTINUE;
     }
     
@@ -1082,26 +1132,25 @@ int Object::SetBoundingBoxXShift( ArrayPtrVoid params )
         return FUNCTOR_CONTINUE;
     }
     
-    if ( current->IsMRest() ) {
-        // We need to reconsider this: if the mrest is on the top staff, the aligner will be before any other note
-        // aligner. This means that it will not be shifted. We need to shift it but not take into account its own width.
-        //current->GetAlignment()->SetXShift( current->GetAlignment()->GetXRel() );
-        (*min_pos) = 0;
-        return FUNCTOR_CONTINUE;
-    }
-    
-    //(*min_pos) += doc->GetLeftMargin(current) * doc->m_drawingUnit / PARAM_DENOMINATOR;
-    
     // the negative offset it the part of the bounding box that overflows on the left
     // |____x_____|
     //  ---- = negative offset
     //int negative_offset = current->GetAlignment()->GetXRel() - current->m_contentBB_x1;
     int negative_offset = - (current->m_contentBB_x1) + (doc->GetLeftMargin(&typeid(*current)) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR);
     
-    // this will probably never happen
+    // this should never happen (but can with glyphs not exactly registered at position x=0 in the SMuFL font used
     if ( negative_offset < 0 ) {
         //LogDebug("%s negative offset %d;", current->GetClassName().c_str(), negative_offset );
         negative_offset = 0;
+    }
+    
+    if ( current->IsMRest() ) {
+        // With MRest, the only thing we want to do it keep their with as possible measure with (if only MRest in all staves/layers)
+        int width =  current->m_contentBB_x2 + doc->GetRightMargin(&typeid(*current)) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR + negative_offset ;
+        // Keep it if more than the current measure width
+        (*measure_width) = std::max( (*measure_width), width );
+        (*min_pos) = 0;
+        return FUNCTOR_CONTINUE;
     }
     
     // check if the element overlaps with the preceeding one given by (*min_pos)

@@ -15,6 +15,9 @@ verovio.vrvToolkit.destructor = Module.cwrap('vrvToolkit_destructor', null, ['nu
 // char *getLog(Toolkit *ic)
 verovio.vrvToolkit.getLog = Module.cwrap('vrvToolkit_getLog', 'string', ['number']);
 
+// char *getVersion(Toolkit *ic)
+verovio.vrvToolkit.getVersion = Module.cwrap('vrvToolkit_getVersion', 'string', ['number']);
+
 // int getPageCount(Toolkit *ic)
 verovio.vrvToolkit.getPageCount = Module.cwrap('vrvToolkit_getPageCount', 'number', ['number']);
 
@@ -35,7 +38,7 @@ verovio.vrvToolkit.renderPage = Module.cwrap('vrvToolkit_renderPage', 'string', 
 
 
 // char *getMEI(Toolkit *ic, int pageNo )
-verovio.vrvToolkit.getMEI = Module.cwrap('vrvToolkit_getMEI', 'string', ['number', 'number']);
+verovio.vrvToolkit.getMEI = Module.cwrap('vrvToolkit_getMEI', 'string', ['number', 'number', 'number']);
 
 // void setOptions(Toolkit *ic, const char *options) 
 verovio.vrvToolkit.setOptions = Module.cwrap('vrvToolkit_setOptions', null, ['number', 'string']);
@@ -72,6 +75,10 @@ verovio.toolkit.prototype.getLog = function () {
   	return verovio.vrvToolkit.getLog(this.ptr);
 };
 
+verovio.toolkit.prototype.getVersion = function () {
+  	return verovio.vrvToolkit.getVersion(this.ptr);
+};
+
 verovio.toolkit.prototype.getPageCount = function () {
   	return verovio.vrvToolkit.getPageCount(this.ptr);
 };
@@ -92,12 +99,12 @@ verovio.toolkit.prototype.renderData = function (data, options) {
   	return verovio.vrvToolkit.renderData(this.ptr, data, options);
 };
 
-verovio.toolkit.prototype.renderPage = function (page_no, options) {
-  	return verovio.vrvToolkit.renderPage(this.ptr, page_no, options);
+verovio.toolkit.prototype.renderPage = function (pageNo, options) {
+  	return verovio.vrvToolkit.renderPage(this.ptr, pageNo, options);
 };
 
-verovio.toolkit.prototype.getMEI = function (page_no) {
-  	return verovio.vrvToolkit.getMEI(this.ptr, page_no);
+verovio.toolkit.prototype.getMEI = function (pageNo, scoreBased) {
+  	return verovio.vrvToolkit.getMEI(this.ptr, pageNo, scoreBased);
 };
 
 verovio.toolkit.prototype.setOptions = function (options) {

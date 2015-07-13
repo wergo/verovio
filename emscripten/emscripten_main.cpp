@@ -49,7 +49,12 @@ extern "C" {
         tk->SetCString(tk->GetLogString());
         return tk->GetCString();
     }
-	
+
+    const char *vrvToolkit_getVersion(Toolkit *tk) {
+        tk->SetCString(tk->GetVersion());
+        return tk->GetCString();
+    }
+    
 	int vrvToolkit_getPageCount(Toolkit *tk) {
 		return tk->GetPageCount();
 	}
@@ -63,8 +68,8 @@ extern "C" {
         return tk->LoadString( data );
 	}
 
-    const char *vrvToolkit_getMEI(Toolkit *tk, int page_no) {
-        tk->SetCString(tk->GetMEI( page_no ));
+    const char *vrvToolkit_getMEI(Toolkit *tk, int page_no, bool score_based) {
+        tk->SetCString(tk->GetMEI( page_no, score_based ));
         return tk->GetCString();
     }
     

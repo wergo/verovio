@@ -6,7 +6,9 @@ SET(CMAKE_BUILD_TYPE Release)
 
 add_definitions(-g)
 
-include_directories(/usr/local/include ../include/vrv ../libmei)
+EXEC_PROGRAM(../tools/get_git_commit.sh ARGS OUTPUT_VARIABLE GIT_COMMIT)
+
+include_directories(/usr/local/include ../include ../include/vrv ../libmei)
 
 add_executable (verovio 
 	main.cpp
@@ -55,6 +57,7 @@ add_executable (verovio
 	../src/rest.cpp
 	../src/scoredef.cpp
 	../src/slur.cpp
+	../src/space.cpp
 	../src/staff.cpp
 	../src/style.cpp
 	../src/svgdevicecontext.cpp
@@ -76,7 +79,7 @@ add_executable (verovio
 	#../libmei/atts_midi.cpp
 	../libmei/atts_shared.cpp
 	../libmei/atts_cmn.cpp
-	#../libmei/atts_critapp.cpp
+	../libmei/atts_critapp.cpp
 	#../libmei/atts_facsimile.cpp
 	#../libmei/atts_harmony.cpp
 	#../libmei/atts_linkalign.cpp

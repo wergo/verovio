@@ -20,6 +20,7 @@ namespace vrv {
 
 class App;
 class Accid;
+class Annot;
 class Barline;
 class Beam;
 class Chord;
@@ -43,6 +44,7 @@ class Rdg;
 class Rest;
 class ScoreDef;
 class Slur;
+class Space;
 class Staff;
 class Syl;
 class System;
@@ -125,12 +127,14 @@ private:
     void WriteMeiClef( pugi::xml_node currentNode, Clef *clef );
     void WriteMeiCustos( pugi::xml_node currentNode, Custos *custos );
     void WriteMeiDot( pugi::xml_node currentNode, Dot *dot );
+    void WriteMeiKeySig( pugi::xml_node currentNode, KeySig *keySig );
     void WriteMeiMensur( pugi::xml_node currentNode, Mensur *mensur );
     void WriteMeiMeterSig( pugi::xml_node currentNode, MeterSig *meterSig );
     void WriteMeiMRest( pugi::xml_node currentNode, MRest *mRest );
     void WriteMeiMultiRest( pugi::xml_node currentNode, MultiRest *multiRest );
     void WriteMeiNote( pugi::xml_node currentNode, Note *note );
     void WriteMeiRest( pugi::xml_node currentNode, Rest *rest );
+    void WriteMeiSpace( pugi::xml_node currentNode, Space *space );
     void WriteMeiTuplet( pugi::xml_node currentNode, Tuplet *tuplet );
     ///@}
     
@@ -149,6 +153,7 @@ private:
     bool WriteMeiApp( pugi::xml_node currentNode, App *app );
     bool WriteMeiLem( pugi::xml_node currentNode, Lem *lem );
     bool WriteMeiRdg( pugi::xml_node currentNode, Rdg *rdg );
+    bool WriteMeiAnnot( pugi::xml_node currentNode, Annot *annot );
     ///@}
     
     /**
@@ -269,8 +274,6 @@ private:
     bool ReadMeiStaffChildren( Object *parent, pugi::xml_node parentNode );
     bool ReadMeiLayer( Object *parent, pugi::xml_node layer );
     bool ReadMeiLayerChildren( Object *parent, pugi::xml_node parentNode, Object *filter = NULL );
-    bool ReadMeiChord( Object* parent, pugi::xml_node chord );
-    bool ReadMeiChordChildren( Object* parent, pugi::xml_node parentNode, Object *filter = NULL );
     ///@}
 
     /**
@@ -280,15 +283,18 @@ private:
     bool ReadMeiAccid( Object *parent, pugi::xml_node accid );
     bool ReadMeiBarline( Object *parent, pugi::xml_node barLine );
     bool ReadMeiBeam( Object *parent, pugi::xml_node beam );
+    bool ReadMeiChord( Object* parent, pugi::xml_node chord );
     bool ReadMeiClef( Object *parent, pugi::xml_node clef );
     bool ReadMeiCustos( Object *parent, pugi::xml_node custos );
     bool ReadMeiDot( Object *parent, pugi::xml_node dot );
+    bool ReadMeiKeySig( Object *parent, pugi::xml_node keySig );
     bool ReadMeiMensur( Object *parent, pugi::xml_node mensur );
     bool ReadMeiMeterSig( Object *parent, pugi::xml_node meterSig );
     bool ReadMeiMRest( Object *parent, pugi::xml_node mRest );
     bool ReadMeiMultiRest( Object *parent, pugi::xml_node multiRest );
     bool ReadMeiNote( Object *parent, pugi::xml_node note );
     bool ReadMeiRest( Object *parent, pugi::xml_node rest );
+    bool ReadMeiSpace( Object *parent, pugi::xml_node space );
     bool ReadMeiSyl( Object *parent, pugi::xml_node syl );
     bool ReadMeiTuplet( Object *parent, pugi::xml_node tuplet );
     bool ReadMeiVerse( Object *parent, pugi::xml_node verse );
@@ -309,7 +315,10 @@ private:
      */
     ///@{
     bool ReadMeiApp( Object *parent, pugi::xml_node app, EditorialLevel level, Object *filter = NULL );
-    bool ReadMeiAppChildren( App *app, pugi::xml_node lemOrRdg, EditorialLevel level, Object *filter = NULL );
+    bool ReadMeiAppChildren( Object *parent, pugi::xml_node parentNode, EditorialLevel level, Object *filter = NULL );
+    bool ReadMeiLemOrRdg( Object *parent, pugi::xml_node lemOrRdg, EditorialLevel level, Object *filter = NULL );
+    bool ReadMeiAnnot( Object *parent, pugi::xml_node annot );
+    ///@}
     ///@}
     
     /**

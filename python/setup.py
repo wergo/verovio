@@ -4,7 +4,13 @@
 setup.py file for Verovio
 """
 
+
 from distutils.core import setup, Extension
+
+# generate the git commit include file
+import os
+os.system("../tools/get_git_commit.sh")
+
 
 verovio_module = Extension('_verovio',
     sources=['../src/accid.cpp', 
@@ -51,7 +57,8 @@ verovio_module = Extension('_verovio',
              '../src/view_tuplet.cpp', 
              '../src/rest.cpp', 
              '../src/scoredef.cpp', 
-             '../src/slur.cpp', 
+             '../src/slur.cpp',
+             '../src/space.cpp', 
              '../src/staff.cpp',
              '../src/style.cpp',
              '../src/svgdevicecontext.cpp', 
@@ -65,12 +72,13 @@ verovio_module = Extension('_verovio',
              '../src/vrv.cpp', 
              '../src/pugixml.cpp', 
              '../libmei/atts_shared.cpp', 
-             '../libmei/atts_cmn.cpp', 
+             '../libmei/atts_cmn.cpp',
+             '../libmei/atts_critapp.cpp', 
              '../libmei/atts_mensural.cpp', 
              '../libmei/atts_pagebased.cpp', 
              'verovio.i'],
                 swig_opts=['-c++'],
-                include_dirs=['/usr/local/include', '../include/vrv', '../libmei'],
+                include_dirs=['/usr/local/include', '../include', '../include/vrv', '../libmei'],
                 extra_compile_args=['-Wno-write-strings', '-Wno-overloaded-virtual', '-Wno-unused-private-field'])
 
 setup (name = 'verovio',

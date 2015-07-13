@@ -9,6 +9,7 @@
 #ifndef __VRV_OBJECT_H__
 #define __VRV_OBJECT_H__
 
+#include <iterator>
 #include <map>
 #include <string>
 #include <typeinfo>
@@ -118,6 +119,17 @@ public:
      * Child access (generic)
      */
     Object *GetChild( int idx );
+    
+    /**
+     * Fill an array of pair with all attributes and their value.
+     * Return the number of attribute found.
+     */
+    int GetAttributes( ArrayOfStrAttr *attributes );
+    
+    /**
+     * Check if an Object has an attribute with the specified values
+     */
+    bool HasAttribute( std::string attribute, std::string value );
     
     /**
      * @name Iterator methods for accessing children.
@@ -247,7 +259,7 @@ public:
      * Fill the list of all the children LayerElement.
      * This is used for navigating in a Layer (See Layer::GetPrevious and Layer::GetNext).
      */  
-    void FillList( ListOfObjects *list );
+    void FillFlatList( ListOfObjects *list );
     
     /**
      * Add a sameAs attribute to the object.
@@ -306,9 +318,9 @@ public:
     //----------//
     
     /**
-     * Add each LayerElements and its children to a list
+     * Add each LayerElements and its children to a flat list
      */
-    virtual int AddLayerElementToList( ArrayPtrVoid params );
+    virtual int AddLayerElementToFlatList( ArrayPtrVoid params );
     
     /**
      * Find a Object with a specified uuid.
@@ -498,6 +510,13 @@ public:
     virtual int PrepareTieAttrEnd( ArrayPtrVoid params ) { return FUNCTOR_CONTINUE; };
     
     /**
+     * Processes by Layer and set drawing pointers.
+     * Set Dot::m_drawingNote for Dot elements in mensural mode
+     * param 0: Note** currentNote for the current not to w
+     */
+    virtual int PreparePointersByLayer( ArrayPtrVoid params ) { return FUNCTOR_CONTINUE; };
+    
+    /**
      * Functor for setting wordpos and connector ends
      * The functor is process by staff/layer/verse using an ArrayOfAttComparisons filter.
      */
@@ -519,7 +538,12 @@ public:
     /**
      * Reset the drawing values before calling PrepareDrawing after changes.
      */
-    virtual int ResetDarwing( ArrayPtrVoid params ) { return FUNCTOR_CONTINUE; };
+    virtual int ResetDarwing( ArrayPtrVoid params ) { return FUNCTOR_CONTINUE; };    
+    
+    /**
+     * Set the drawing position (m_drawingX and m_drawingY) values for objects
+     */
+    virtual int SetDrawingXY( ArrayPtrVoid params ) { return FUNCTOR_CONTINUE; };
     
     /**
      * @name Functors for justification
@@ -679,7 +703,7 @@ public:
 //----------------------------------------------------------------------------
 
 /** 
- * This class is an pseudo interface for elements maintaining a list of
+ * This class is an pseudo interface for elements maintaining a flat list of
  * children LayerElement for processing.
  * The list is a flatten list of pointers to children elements.
  * It is not an abstract class but should not be instanciate directly.
@@ -697,6 +721,12 @@ public:
      * Look for the Object in the list and return its position (-1 if not found)
      */
     int GetListIndex( const Object *listElement );
+    
+    /**
+     * Gets the first item of type elementType starting at startFrom
+     */
+    Object *GetListFirst(const Object *startFrom, const std::type_info *elementType = NULL );
+    Object *GetListFirstBackward(Object *startFrom, const std::type_info *elementType = NULL );
     
     /**
      * Returns the previous object in the list (NULL if not found)
@@ -718,6 +748,7 @@ public:
     
 private:
     ListOfObjects m_list;
+    ListOfObjects::iterator m_iteratorCurrent;
     
 protected:
     /**
@@ -758,8 +789,21 @@ public:
     // override function "Call"
     virtual void Call( Object *ptr, ArrayPtrVoid params );
     
+private:
+    
+public:
+    /**
+     * The return code of the functor.
+     * FUNCTOR_CONTINUE: continue processing
+     * FUNCTOR_SIBLINGS: process only siblings (do not go deeper)
+     * FUNCTOR_STOP: stop the functor (e.g., when an Object or a value is found)
+     */
     int m_returnCode;
-    bool m_reverse;
+    /** 
+     * A flag for indicating if only visible Object have to be processed.
+     * The value is true by default.
+     */
+    bool m_visibleOnly;
     
 private:
     
@@ -790,7 +834,12 @@ public:
     }
     
 private:
+    
+public:
+    
+private:
     const std::type_info *m_elementType;
+    
 };
 
 } // namespace vrv
