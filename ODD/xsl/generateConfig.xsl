@@ -139,7 +139,7 @@
                 <xsl:variable name="valItem.count" select="count($current.valList/tei:valItem)" as="xs:integer"/>
                 <xsl:for-each select="$current.valList/tei:valItem">
                     <xsl:variable name="comma" select="if(position() lt $valItem.count) then(',') else('')" as="xs:string"/>
-                    <xsl:value-of select="$tab || $dataType.raw || '_' || @ident || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
+                    <xsl:value-of select="$tab || $dataType.raw || '_' || replace(@ident,'[ -\.]+','_') || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
                 </xsl:for-each>
                 <xsl:value-of select="'};' || $lb || $lb"/>
             </xsl:for-each>
