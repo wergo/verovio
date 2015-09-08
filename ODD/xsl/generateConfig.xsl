@@ -131,15 +131,15 @@
             <xsl:for-each select="$valLists">
                 <xsl:variable name="current.valList" select="." as="node()"/>
                 <xsl:variable name="dataType.raw" select="replace(upper-case(replace($current.valList/parent::tei:attDef/@ident,'\.','_')),':','')" as="xs:string"/>
-                <xsl:variable name="dataType.class" select="replace(replace($current.valList/ancestor::tei:classSpec/@ident,'att\.',''),'\.','_')" as="xs:string"/>
-                <xsl:variable name="dataType.title" select="'data_' || $dataType.class || '_' || $dataType.raw" as="xs:string"/>
+                <xsl:variable name="dataType.class" select="replace(if($current.valList/ancestor::tei:classSpec) then($current.valList/ancestor::tei:classSpec/@ident) else($current.valList/ancestor::tei:elementSpec/@ident),'\.','_')" as="xs:string"/>
+                <xsl:variable name="dataType.title" select="$dataType.class || '_' || $dataType.raw" as="xs:string"/>
                 <xsl:value-of select="'/**' || $lb || ' * (generated) ' || $dataType.title || $lb || ' */' || $lb"/>
                 <xsl:value-of select="'enum ' || $dataType.title || ' {' || $lb"/>
-                <xsl:value-of select="$tab || $dataType.raw || '_NONE = 0,' || $lb"/>
+                <xsl:value-of select="$tab || $dataType.title || '_NONE = 0,' || $lb"/>
                 <xsl:variable name="valItem.count" select="count($current.valList/tei:valItem)" as="xs:integer"/>
                 <xsl:for-each select="$current.valList/tei:valItem">
                     <xsl:variable name="comma" select="if(position() lt $valItem.count) then(',') else('')" as="xs:string"/>
-                    <xsl:value-of select="$tab || $dataType.raw || '_' || replace(@ident,'[ -\.]+','_') || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
+                    <xsl:value-of select="$tab || $dataType.title || '_' || replace(@ident,'[ -\.]+','_') || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
                 </xsl:for-each>
                 <xsl:value-of select="'};' || $lb || $lb"/>
             </xsl:for-each>
