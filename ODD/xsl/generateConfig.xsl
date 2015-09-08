@@ -15,7 +15,7 @@
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Mar 24, 2015</xd:p>
             <xd:p><xd:b>Author:</xd:b> Johannes Kepper</xd:p>
-            <xd:p></xd:p>
+            <xd:p>This XSL operates on the Verovio ODD file.</xd:p>
         </xd:desc>
     </xd:doc>
     
@@ -46,7 +46,7 @@
     
     
     <xsl:variable name="excluded.dataTypes" as="xs:string*">
-
+        
         <xsl:value-of select="'data.DURATION'"/>
         <xsl:value-of select="'data.DURATION.cmn'"/>
         <xsl:value-of select="'data.DURATION.mensural'"/>
@@ -118,7 +118,7 @@
                     <xsl:variable name="valItem.count" select="count($current.dataType//rng:value)" as="xs:integer"/>
                     <xsl:for-each select="$current.dataType//rng:value">
                         <xsl:variable name="comma" select="if(position() lt $valItem.count) then(',') else('')" as="xs:string"/>
-                        <xsl:value-of select="$tab || $dataType.raw || '_' || text() || $comma || ' // ' || normalize-space(./following-sibling::a:documentation[1]/text()) || $lb"/>
+                        <xsl:value-of select="$tab || $dataType.raw || '_' || replace(text(),'[ -\.]+','_') || $comma || ' // ' || normalize-space(./following-sibling::a:documentation[1]/text()) || $lb"/>
                     </xsl:for-each>
                     <xsl:value-of select="'};' || $lb || $lb"/>    
                 </xsl:if>
@@ -130,8 +130,9 @@
             <xsl:variable name="valLists" select="$odd//tei:valList" as="node()*"/>
             <xsl:for-each select="$valLists">
                 <xsl:variable name="current.valList" select="." as="node()"/>
-                <xsl:variable name="dataType.raw" select="upper-case(replace($current.valList/parent::tei:attDef/@ident,'\.','_'))" as="xs:string"/>
-                <xsl:variable name="dataType.title" select="'data_' || $dataType.raw" as="xs:string"/>
+                <xsl:variable name="dataType.raw" select="replace(upper-case(replace($current.valList/parent::tei:attDef/@ident,'\.','_')),':','')" as="xs:string"/>
+                <xsl:variable name="dataType.class" select="replace(replace($current.valList/ancestor::tei:classSpec/@ident,'att\.',''),'\.','_')" as="xs:string"/>
+                <xsl:variable name="dataType.title" select="'data_' || $dataType.class || '_' || $dataType.raw" as="xs:string"/>
                 <xsl:value-of select="'/**' || $lb || ' * (generated) ' || $dataType.title || $lb || ' */' || $lb"/>
                 <xsl:value-of select="'enum ' || $dataType.title || ' {' || $lb"/>
                 <xsl:value-of select="$tab || $dataType.raw || '_NONE = 0,' || $lb"/>
