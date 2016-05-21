@@ -25,6 +25,28 @@
     <xsl:variable name="lb" select="'&#13;'" as="xs:string"/>
     <xsl:variable name="quot" select="'&quot;'" as="xs:string"/>
     
+    <!-- sample:  -->
+    <xsl:function name="local:getGeneratedDataTypeRaw" as="xs:string">
+        <xsl:param name="elem" as="node()"/>
+        <xsl:value-of select="replace(upper-case(replace($elem/parent::tei:attDef/@ident,'\.','_')),':','')"/>
+    </xsl:function>
+    
+    <xsl:function name="local:getGeneratedDataTypeClass" as="xs:string">
+        <xsl:param name="elem" as="node()"/>
+        <xsl:value-of select="replace(if($elem/ancestor::tei:classSpec) then($elem/ancestor::tei:classSpec/@ident) else($elem/ancestor::tei:elementSpec/@ident),'\.','_')"/>
+    </xsl:function>
+    
+    <xsl:function name="local:getGeneratedDataTypeTitle" as="xs:string">
+        <xsl:param name="elem" as="node()"/>
+        <xsl:value-of select="local:getGeneratedDataTypeClass($elem) || '_' || local:getGeneratedDataTypeRaw($elem)"/>
+    </xsl:function>
+    
+    <xsl:function name="local:getDataTypeValue" as="xs:string">
+        <xsl:param name="title" as="xs:string"/>
+        <xsl:param name="value" as="xs:string"/>
+        <xsl:value-of select="$title || '_' || replace($value,'[ -\.]+','_')"/>
+    </xsl:function>
+    
     <xsl:function name="local:resolveCases" as="xs:string">
         <xsl:param name="input" as="xs:string"/>
         
@@ -118,7 +140,7 @@
                     <xsl:variable name="valItem.count" select="count($current.dataType//rng:value)" as="xs:integer"/>
                     <xsl:for-each select="$current.dataType//rng:value">
                         <xsl:variable name="comma" select="if(position() lt $valItem.count) then(',') else('')" as="xs:string"/>
-                        <xsl:value-of select="$tab || $dataType.raw || '_' || replace(text(),'[ -\.]+','_') || $comma || ' // ' || normalize-space(./following-sibling::a:documentation[1]/text()) || $lb"/>
+                        <xsl:value-of select="$tab || local:getDataTypeValue($dataType.raw,text()) || $comma || ' // ' || normalize-space(./following-sibling::a:documentation[1]/text()) || $lb"/>
                     </xsl:for-each>
                     <xsl:value-of select="'};' || $lb || $lb"/>    
                 </xsl:if>
@@ -130,16 +152,17 @@
             <xsl:variable name="valLists" select="$odd//tei:valList" as="node()*"/>
             <xsl:for-each select="$valLists">
                 <xsl:variable name="current.valList" select="." as="node()"/>
-                <xsl:variable name="dataType.raw" select="replace(upper-case(replace($current.valList/parent::tei:attDef/@ident,'\.','_')),':','')" as="xs:string"/>
-                <xsl:variable name="dataType.class" select="replace(if($current.valList/ancestor::tei:classSpec) then($current.valList/ancestor::tei:classSpec/@ident) else($current.valList/ancestor::tei:elementSpec/@ident),'\.','_')" as="xs:string"/>
-                <xsl:variable name="dataType.title" select="$dataType.class || '_' || $dataType.raw" as="xs:string"/>
+                <xsl:variable name="dataType.raw" select="local:getGeneratedDataTypeRaw($current.valList)" as="xs:string"/>
+                <xsl:variable name="dataType.class" select="local:getGeneratedDataTypeClass($current.valList)" as="xs:string"/>
+                <xsl:variable name="dataType.title" select="local:getGeneratedDataTypeTitle($current.valList)" as="xs:string"/>
                 <xsl:value-of select="'/**' || $lb || ' * (generated) ' || $dataType.title || $lb || ' */' || $lb"/>
                 <xsl:value-of select="'enum ' || $dataType.title || ' {' || $lb"/>
                 <xsl:value-of select="$tab || $dataType.title || '_NONE = 0,' || $lb"/>
                 <xsl:variable name="valItem.count" select="count($current.valList/tei:valItem)" as="xs:integer"/>
                 <xsl:for-each select="$current.valList/tei:valItem">
+                    <xsl:variable name="valItem" select="." as="node()"/>
                     <xsl:variable name="comma" select="if(position() lt $valItem.count) then(',') else('')" as="xs:string"/>
-                    <xsl:value-of select="$tab || $dataType.title || '_' || replace(@ident,'[ -\.]+','_') || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
+                    <xsl:value-of select="$tab || local:getDataTypeValue($dataType.title,$valItem/@ident) || $comma || ' // ' || normalize-space(./tei:desc/text()) || $lb"/>
                 </xsl:for-each>
                 <xsl:value-of select="'};' || $lb || $lb"/>
             </xsl:for-each>
@@ -154,7 +177,7 @@
                 
                 <xsl:if test="not($current.dataType/@ident = $excluded.dataTypes)">
                     <xsl:variable name="dataType.title" select="replace($current.dataType/@ident,'\.','_')" as="xs:string"/>
-                    <xsl:variable name="dataType.raw" select="replace($dataType.title,'data_','')" as="xs:string"/>
+                    <xsl:variable name="dataType.raw" select="local:getGeneratedDataTypeRaw($current.dataType)" as="xs:string"/>
                     
                     <xsl:variable name="cases.fixed" select="local:resolveCases($dataType.raw)" as="xs:string"/>
                     
