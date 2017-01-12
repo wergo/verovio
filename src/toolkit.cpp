@@ -26,6 +26,7 @@
 #include "slur.h"
 #include "style.h"
 #include "svgdevicecontext.h"
+#include "timemap.h"
 #include "vrv.h"
 
 //----------------------------------------------------------------------------
@@ -188,8 +189,11 @@ bool Toolkit::SetOutputFormat(std::string const &outformat)
     else if (outformat == "mei") {
         m_outformat = MEI;
     }
+    else if (outformat == "timemap") {
+        m_outformat = TIMEMAP;
+    }
     else {
-        LogError("Output format can only be: mei, humdrum, midi or svg");
+        LogError("Output format can only be: mei, humdrum, midi, timemap or svg");
         return false;
     }
     return true;
@@ -854,6 +858,29 @@ bool Toolkit::GetHumdrumFile(const std::string &filename)
 void Toolkit::GetHumdrum(ostream &output)
 {
     output << GetHumdrumBuffer();
+}
+
+
+std::string Toolkit::GetTimemap(void) {
+	return CreateTimemapJson(m_doc);
+}
+
+bool Toolkit::GetTimemapFile(const std::string &filename) {
+    std::ofstream output;
+    output.open(filename.c_str());
+
+    if (!output.is_open()) {
+        // add message?
+        return false;
+    }
+
+    GetTimemap(output);
+    output.close();
+    return true;
+}
+
+void Toolkit::GetTimemap(std::ostream &output) {
+    output << GetTimemap();
 }
 
 std::string Toolkit::RenderToMidi()

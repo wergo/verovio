@@ -353,7 +353,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (outformat != "svg" && outformat != "mei" && outformat != "midi" && outformat != "humdrum") {
+    if (outformat != "svg" && outformat != "mei" && outformat != "midi" && outformat != "humdrum" && outformat != "timemap") {
         cerr << "Output format can only be 'mei', 'svg', 'midi', or 'humdrum'." << endl;
         exit(1);
     }
@@ -445,6 +445,21 @@ int main(int argc, char **argv)
         }
         else {
             cerr << "Output written to " << outfile << "." << endl;
+        }
+    }
+    else if (outformat == "timemap") {
+        outfile += ".json";
+        if (std_output) {
+            toolkit.GetTimemap(std::cout);
+        }
+        else {
+            if (!toolkit.GetTimemapFile(outfile)) {
+                cerr << "Unable to write Timemap to " << outfile << "." << endl;
+                exit(1);
+            }
+            else {
+                cerr << "Output written to " << outfile << "." << endl;
+            }
         }
     }
     else if (outformat == "humdrum") {

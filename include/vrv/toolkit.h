@@ -26,7 +26,7 @@
 
 namespace vrv {
 
-enum FileFormat { UNKNOWN = 0, AUTO, MEI, HUMDRUM, PAE, DARMS, MUSICXML, MUSICXMLHUM };
+enum FileFormat { UNKNOWN = 0, AUTO, MEI, HUMDRUM, PAE, DARMS, MUSICXML, MUSICXMLHUM, TIMEMAP };
 
 //----------------------------------------------------------------------------
 // Toolkit
@@ -123,7 +123,11 @@ public:
 
     bool GetHumdrumFile(const std::string &filename);
     void GetHumdrum(std::ostream &output);
-    std::string GetHumdrum();
+    std::string GetHumdrum(void);
+
+    bool GetTimemapFile(const std::string &filename);
+    void GetTimemap(std::ostream &output);
+    std::string GetTimemap(void);
 
     /**
      * Returns array of IDs of elements being currently played.

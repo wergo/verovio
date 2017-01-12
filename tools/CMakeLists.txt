@@ -16,6 +16,7 @@ include_directories(
     ../include
     ../include/midi
     ../include/hum
+    ../include/json
     ../include/pugi
     ../include/utf8
     ../include/vrv
@@ -53,6 +54,7 @@ endif()
 
 file(GLOB verovio_SRC "../src/*.cpp")
 file(GLOB midi_SRC "../src/midi/*.cpp")
+file(GLOB json_SRC "../src/json/*.cc")
 
 add_executable (
     verovio
@@ -60,6 +62,7 @@ add_executable (
     ${verovio_SRC}
     ${hum_SRC}
     ${midi_SRC}
+    ${json_SRC}
     ../src/pugi/pugixml.cpp
     ../libmei/attconverter.cpp
     ../libmei/atts_cmn.cpp
