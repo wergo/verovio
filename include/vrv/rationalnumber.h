@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-// Name:        keysig.cpp
+// Name:        rationalnumber.h
 // Author:      Craig Stuart Sapp
 // Created:     08/08/2015
 // Copyright (c) Authors and others. All rights reserved.
