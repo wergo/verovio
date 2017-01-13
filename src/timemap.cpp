@@ -167,6 +167,19 @@ void QueryObjectNoChildren(vector<Object *> &objs, Object *obj, const string &qu
     }
 }
 
+void QueryObjectNoGrandchildren(vector<Object *> &objs, Object *obj, const string &query)
+{
+    objs.clear();
+    Object *child;
+    int count = obj->GetChildCount();
+    for (int i = 0; i < count; i++) {
+        child = obj->GetChild(i);
+        if (child->GetClassName() == query) {
+            objs.push_back(child);
+        }
+    }
+}
+
 string CreateTimemapJson(Doc &doc)
 {
     //_printTree(0, &doc, cout);
@@ -205,7 +218,9 @@ string CreateTimemapJson(Doc &doc)
     }
 
     if (!allmap.empty()) {
-        allmap[0]->tempo = startingTempo;
+        if (allmap[0]->tempo < 1.0) {
+            allmap[0]->tempo = startingTempo;
+        }
     }
 
     // calculate tstamps
@@ -243,7 +258,61 @@ RationalNumber GetMeasureTimemap(Timemap &measureTimemap, Object *measure, Ratio
     if (endtime == 0) {
         return 0;
     }
+
+    // process any tempo markings
+    vector<Object *> tempos;
+    QueryObjectNoGrandchildren(tempos, measure, "Tempo");
+    double tempo = 0.0;
+    string tempostring;
+    string startid;
+    for (int i = 0; i < (int)tempos.size(); i++) {
+        tempostring = GetAttribute(tempos[i], "midi.bpm");
+        if (tempostring == "") {
+            continue;
+        }
+        tempo = stod(tempostring);
+        startid = GetAttribute(tempos[i], "startid");
+        if (startid == "") {
+            // cannot localize in score without @startid
+            // (tstamp positioning would be needed).
+            continue;
+        }
+        InsertTempoIntoTimemap(measureTimemap, tempo, startid);
+    }
+
     return endtime - offset;
+}
+
+void InsertTempoIntoTimemap(Timemap &timemap, double tempo, const string &startid)
+{
+    if (startid.size() == 0) {
+        return;
+    }
+    string query;
+    if (startid[0] == '#') {
+        query = startid.substr(1);
+    }
+    else {
+        query = startid;
+    }
+    for (auto it = timemap.GetBeginIt(); it != timemap.GetEndIt(); it++) {
+        if ((*it)->on.find(query) != (*it)->on.end()) {
+            (*it)->tempo = tempo;
+            return;
+        }
+    }
+}
+
+string GetAttribute(Object *obj, const string &attname)
+{
+    ArrayOfStrAttr attlist;
+    obj->GetAttributes(&attlist);
+    for (int i = 0; i < (int)attlist.size(); i++) {
+        if (attlist[i].first == attname) {
+            return attlist[i].second;
+        }
+    }
+    return "";
 }
 
 RationalNumber GetDuration(Object *obj, RationalNumber scaling)

@@ -51,12 +51,15 @@ public:
 };
 
 void QueryObjectNoChildren(vector<Object *> &objs, Object *obj, const string &query);
+void QueryObjectNoGrandchildren(vector<Object *> &objs, Object *obj, const string &query);
 RationalNumber GetDuration(Object *obj, RationalNumber scaling = 1);
 string CreateTimemapJson(Doc &doc);
 RationalNumber GetMeasureTimemap(Timemap &measureTimemap, Object *measure, RationalNumber offset);
 RationalNumber AddChildrenToTimemap(
     Timemap &timemap, Object *object, RationalNumber offset = 0, RationalNumber scaling = 1);
 void InsertNoteChildrenIds(set<string> &ids, Object *obj);
+string GetAttribute(Object *obj, const string &attname);
+void InsertTempoIntoTimemap(Timemap &timemap, double tempo, const string &startid);
 
 } // namespace vrv
 
