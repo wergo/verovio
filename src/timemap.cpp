@@ -196,9 +196,26 @@ string CreateTimemapJson(Doc &doc)
     vector<Timemap> measureTimemaps(measures.size());
     RationalNumber currentTime = 0;
     RationalNumber duration;
+    RationalNumber timeSigDur = 4; // assume default 4/4 meter
+    if (doc.m_scoreDef.HasMeterCount() && doc.m_scoreDef.HasMeterUnit()) {
+        timeSigDur = doc.m_scoreDef.GetMeterCount();
+        timeSigDur /= doc.m_scoreDef.GetMeterUnit();
+        timeSigDur *= 4; // convert to quarter-note durations.
+    }
+    else {
+        StaffDef *staffdef = doc.m_scoreDef.GetStaffDef(1);
+        if (staffdef && staffdef->HasMeterCount() && staffdef->HasMeterUnit()) {
+            timeSigDur = staffdef->GetMeterCount();
+            timeSigDur /= staffdef->GetMeterUnit();
+            timeSigDur *= 4; // convert to quarter-note durations.
+        }
+    }
     int entrycount = 0;
     for (int i = 0; i < (int)measures.size(); i++) {
         duration = GetMeasureTimemap(measureTimemaps[i], measures[i], currentTime);
+        if (duration == 0) {
+            duration = timeSigDur;
+        }
         // cerr << "Measure " << i << " qduration = " << duration << endl;
         currentTime += duration;
         entrycount += measureTimemaps[i].GetEntryCount();
