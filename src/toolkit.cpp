@@ -192,6 +192,9 @@ bool Toolkit::SetOutputFormat(std::string const &outformat)
     else if (outformat == "timemap") {
         m_outformat = TIMEMAP;
     }
+    else if (outformat == "midi") {
+        m_outformat = MIDI;
+    }
     else {
         LogError("Output format can only be: mei, humdrum, midi, timemap or svg");
         return false;
