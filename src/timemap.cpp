@@ -268,10 +268,10 @@ RationalNumber GetMeasureTimemap(Timemap &measureTimemap, Object *measure, Ratio
 {
     vector<Object *> layers;
     QueryObjectNoChildren(layers, measure, "Layer");
-    for (int i = 0; i < (int)layers.size(); i++) {
-        AddChildrenToTimemap(measureTimemap, layers[i], offset);
+    RationalNumber endtime = 0;
+    for (int i = (int)layers.size() - 1; i >= 0; i--) {
+        endtime = AddChildrenToTimemap(measureTimemap, layers[i], offset);
     }
-    RationalNumber endtime = measureTimemap.GetLastQStamp();
     if (endtime == 0) {
         return 0;
     }
@@ -297,7 +297,7 @@ RationalNumber GetMeasureTimemap(Timemap &measureTimemap, Object *measure, Ratio
         InsertTempoIntoTimemap(measureTimemap, tempo, startid);
     }
 
-    return endtime - offset;
+    return endtime;
 }
 
 void InsertTempoIntoTimemap(Timemap &timemap, double tempo, const string &startid)
