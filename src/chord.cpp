@@ -518,7 +518,8 @@ int Chord::PrepareLayerElementParts(FunctorParams *functorParams)
     Flag *currentFlag = NULL;
     if (currentStem) currentFlag = dynamic_cast<Flag *>(currentStem->FindChildByType(FLAG, 1));
 
-    if (this->GetActualDur() > DUR_1) {
+    // We also need to add a stem object to whole note chords because of @stem.dir
+    if ((this->GetActualDur() > DUR_1) || (this->HasStemMod())) {
         if (!currentStem) {
             currentStem = new Stem();
             this->AddChild(currentStem);

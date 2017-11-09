@@ -693,7 +693,7 @@ int Note::PrepareLayerElementParts(FunctorParams *functorParams)
     Flag *currentFlag = NULL;
     if (currentStem) currentFlag = dynamic_cast<Flag *>(currentStem->FindChildByType(FLAG, 1));
 
-    if ((this->GetActualDur() > DUR_1) && !this->IsChordTone() && !this->IsMensural()) {
+    if (((this->GetActualDur() > DUR_1) || !this->HasStemMod()) && !this->IsChordTone() && !this->IsMensural()) {
         if (!currentStem) {
             currentStem = new Stem();
             this->AddChild(currentStem);
