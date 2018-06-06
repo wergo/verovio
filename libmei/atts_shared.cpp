@@ -1585,52 +1585,6 @@ bool AttDotLog::HasForm() const
 /* include <attform> */
 
 //----------------------------------------------------------------------------
-// AttDurationAdditive
-//----------------------------------------------------------------------------
-
-AttDurationAdditive::AttDurationAdditive() : Att()
-{
-    ResetDurationAdditive();
-}
-
-AttDurationAdditive::~AttDurationAdditive()
-{
-}
-
-void AttDurationAdditive::ResetDurationAdditive()
-{
-    m_dur = DURATION_NONE;
-}
-
-bool AttDurationAdditive::ReadDurationAdditive(pugi::xml_node element)
-{
-    bool hasAttribute = false;
-    if (element.attribute("dur")) {
-        this->SetDur(StrToDuration(element.attribute("dur").value()));
-        element.remove_attribute("dur");
-        hasAttribute = true;
-    }
-    return hasAttribute;
-}
-
-bool AttDurationAdditive::WriteDurationAdditive(pugi::xml_node element)
-{
-    bool wroteAttribute = false;
-    if (this->HasDur()) {
-        element.append_attribute("dur") = DurationToStr(this->GetDur()).c_str();
-        wroteAttribute = true;
-    }
-    return wroteAttribute;
-}
-
-bool AttDurationAdditive::HasDur() const
-{
-    return (m_dur != DURATION_NONE);
-}
-
-/* include <attdur> */
-
-//----------------------------------------------------------------------------
 // AttDurationDefault
 //----------------------------------------------------------------------------
 
@@ -8154,14 +8108,6 @@ bool Att::SetShared(Object *element, std::string attrType, std::string attrValue
             return true;
         }
     }
-    if (element->HasAttClass(ATT_DURATIONADDITIVE)) {
-        AttDurationAdditive *att = dynamic_cast<AttDurationAdditive *>(element);
-        assert(att);
-        if (attrType == "dur") {
-            att->SetDur(att->StrToDuration(attrValue));
-            return true;
-        }
-    }
     if (element->HasAttClass(ATT_DURATIONDEFAULT)) {
         AttDurationDefault *att = dynamic_cast<AttDurationDefault *>(element);
         assert(att);
@@ -9624,13 +9570,6 @@ void Att::GetShared(const Object *element, ArrayOfStrAttr *attributes)
         assert(att);
         if (att->HasForm()) {
             attributes->push_back(std::make_pair("form", att->DotLogFormToStr(att->GetForm())));
-        }
-    }
-    if (element->HasAttClass(ATT_DURATIONADDITIVE)) {
-        const AttDurationAdditive *att = dynamic_cast<const AttDurationAdditive *>(element);
-        assert(att);
-        if (att->HasDur()) {
-            attributes->push_back(std::make_pair("dur", att->DurationToStr(att->GetDur())));
         }
     }
     if (element->HasAttClass(ATT_DURATIONDEFAULT)) {

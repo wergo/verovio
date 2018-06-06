@@ -374,6 +374,30 @@ enum data_COLORNAMES {
 };
 
 /**
+ * MEI data.COMPASSDIRECTION.basic
+ */
+enum data_COMPASSDIRECTION_basic {
+    COMPASSDIRECTION_basic_NONE = 0,
+    COMPASSDIRECTION_basic_n,
+    COMPASSDIRECTION_basic_e,
+    COMPASSDIRECTION_basic_s,
+    COMPASSDIRECTION_basic_w,
+    COMPASSDIRECTION_basic_MAX
+};
+
+/**
+ * MEI data.COMPASSDIRECTION.extended
+ */
+enum data_COMPASSDIRECTION_extended {
+    COMPASSDIRECTION_extended_NONE = 0,
+    COMPASSDIRECTION_extended_ne,
+    COMPASSDIRECTION_extended_se,
+    COMPASSDIRECTION_extended_nw,
+    COMPASSDIRECTION_extended_sw,
+    COMPASSDIRECTION_extended_MAX
+};
+
+/**
  * MEI data.ENCLOSURE
  */
 enum data_ENCLOSURE {
@@ -1228,6 +1252,16 @@ enum endings_ENDINGREND {
 };
 
 /**
+ * MEI att.episema.vis@form
+ */
+enum episemaVis_FORM {
+    episemaVis_FORM_NONE = 0,
+    episemaVis_FORM_horiz,
+    episemaVis_FORM_vert,
+    episemaVis_FORM_MAX
+};
+
+/**
  * MEI att.fTrem.log@form
  */
 enum fTremLog_FORM {
@@ -1484,56 +1518,34 @@ enum mordentLog_FORM {
 };
 
 /**
- * MEI att.nc.vis@con
+ * MEI att.ncForm@con
  */
-enum ncVis_CON {
-    ncVis_CON_NONE = 0,
-    ncVis_CON_g,
-    ncVis_CON_l,
-    ncVis_CON_MAX
+enum ncForm_CON {
+    ncForm_CON_NONE = 0,
+    ncForm_CON_g,
+    ncForm_CON_l,
+    ncForm_CON_e,
+    ncForm_CON_MAX
 };
 
 /**
- * MEI att.nc.vis@curved
+ * MEI att.ncForm@curve
  */
-enum ncVis_CURVED {
-    ncVis_CURVED_NONE = 0,
-    ncVis_CURVED_a,
-    ncVis_CURVED_c,
-    ncVis_CURVED_MAX
+enum ncForm_CURVE {
+    ncForm_CURVE_NONE = 0,
+    ncForm_CURVE_a,
+    ncForm_CURVE_c,
+    ncForm_CURVE_MAX
 };
 
 /**
- * MEI att.nc.vis@diagonalright
+ * MEI att.ncForm@len
  */
-enum ncVis_DIAGONALRIGHT {
-    ncVis_DIAGONALRIGHT_NONE = 0,
-    ncVis_DIAGONALRIGHT_u,
-    ncVis_DIAGONALRIGHT_d,
-    ncVis_DIAGONALRIGHT_MAX
-};
-
-/**
- * MEI att.nc.vis@oriscus
- */
-enum ncVis_ORISCUS {
-    ncVis_ORISCUS_NONE = 0,
-    ncVis_ORISCUS_c,
-    ncVis_ORISCUS_f,
-    ncVis_ORISCUS_j,
-    ncVis_ORISCUS_unknown,
-    ncVis_ORISCUS_MAX
-};
-
-/**
- * MEI att.nc.vis@quilisma
- */
-enum ncVis_QUILISMA {
-    ncVis_QUILISMA_NONE = 0,
-    ncVis_QUILISMA_2,
-    ncVis_QUILISMA_3,
-    ncVis_QUILISMA_unknown,
-    ncVis_QUILISMA_MAX
+enum ncForm_LEN {
+    ncForm_LEN_NONE = 0,
+    ncForm_LEN_l,
+    ncForm_LEN_s,
+    ncForm_LEN_MAX
 };
 
 /**

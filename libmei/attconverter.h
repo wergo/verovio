@@ -65,6 +65,12 @@ public:
     std::string ColornamesToStr(data_COLORNAMES data) const;
     data_COLORNAMES StrToColornames(std::string value, bool logWarning = true) const;
 
+    std::string CompassdirectionBasicToStr(data_COMPASSDIRECTION_basic data) const;
+    data_COMPASSDIRECTION_basic StrToCompassdirectionBasic(std::string value, bool logWarning = true) const;
+
+    std::string CompassdirectionExtendedToStr(data_COMPASSDIRECTION_extended data) const;
+    data_COMPASSDIRECTION_extended StrToCompassdirectionExtended(std::string value, bool logWarning = true) const;
+
     std::string EnclosureToStr(data_ENCLOSURE data) const;
     data_ENCLOSURE StrToEnclosure(std::string value, bool logWarning = true) const;
 
@@ -203,6 +209,9 @@ public:
     std::string EndingsEndingrendToStr(endings_ENDINGREND data) const;
     endings_ENDINGREND StrToEndingsEndingrend(std::string value, bool logWarning = true) const;
 
+    std::string EpisemaVisFormToStr(episemaVis_FORM data) const;
+    episemaVis_FORM StrToEpisemaVisForm(std::string value, bool logWarning = true) const;
+
     std::string FTremLogFormToStr(fTremLog_FORM data) const;
     fTremLog_FORM StrToFTremLogForm(std::string value, bool logWarning = true) const;
 
@@ -275,20 +284,14 @@ public:
     std::string MordentLogFormToStr(mordentLog_FORM data) const;
     mordentLog_FORM StrToMordentLogForm(std::string value, bool logWarning = true) const;
 
-    std::string NcVisConToStr(ncVis_CON data) const;
-    ncVis_CON StrToNcVisCon(std::string value, bool logWarning = true) const;
+    std::string NcFormConToStr(ncForm_CON data) const;
+    ncForm_CON StrToNcFormCon(std::string value, bool logWarning = true) const;
 
-    std::string NcVisCurvedToStr(ncVis_CURVED data) const;
-    ncVis_CURVED StrToNcVisCurved(std::string value, bool logWarning = true) const;
+    std::string NcFormCurveToStr(ncForm_CURVE data) const;
+    ncForm_CURVE StrToNcFormCurve(std::string value, bool logWarning = true) const;
 
-    std::string NcVisDiagonalrightToStr(ncVis_DIAGONALRIGHT data) const;
-    ncVis_DIAGONALRIGHT StrToNcVisDiagonalright(std::string value, bool logWarning = true) const;
-
-    std::string NcVisOriscusToStr(ncVis_ORISCUS data) const;
-    ncVis_ORISCUS StrToNcVisOriscus(std::string value, bool logWarning = true) const;
-
-    std::string NcVisQuilismaToStr(ncVis_QUILISMA data) const;
-    ncVis_QUILISMA StrToNcVisQuilisma(std::string value, bool logWarning = true) const;
+    std::string NcFormLenToStr(ncForm_LEN data) const;
+    ncForm_LEN StrToNcFormLen(std::string value, bool logWarning = true) const;
 
     std::string NoteAnlMensuralLigToStr(noteAnlMensural_LIG data) const;
     noteAnlMensural_LIG StrToNoteAnlMensuralLig(std::string value, bool logWarning = true) const;

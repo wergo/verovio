@@ -1211,45 +1211,6 @@ private:
 };
 
 //----------------------------------------------------------------------------
-// AttDurationAdditive
-//----------------------------------------------------------------------------
-
-class AttDurationAdditive : public Att {
-public:
-    AttDurationAdditive();
-    virtual ~AttDurationAdditive();
-
-    /** Reset the default values for the attribute class **/
-    void ResetDurationAdditive();
-
-    /** Read the values for the attribute class **/
-    bool ReadDurationAdditive(pugi::xml_node element);
-
-    /** Write the values for the attribute class **/
-    bool WriteDurationAdditive(pugi::xml_node element);
-
-    /**
-     * @name Setters, getters and presence checker for class members.
-     * The checker returns true if the attribute class is set (e.g., not equal
-     * to the default value)
-     **/
-    ///@{
-    void SetDur(data_DURATION dur_) { m_dur = dur_; }
-    data_DURATION GetDur() const { return m_dur; }
-    bool HasDur() const;
-    ///@}
-
-private:
-    /**
-     * When a duration cannot be represented as a single power-of-two value, multiple
-     * space-separated values that add up to the total duration may be used.
-     **/
-    data_DURATION m_dur;
-
-    /* include <attdur> */
-};
-
-//----------------------------------------------------------------------------
 // AttDurationDefault
 //----------------------------------------------------------------------------
 
@@ -1338,8 +1299,8 @@ public:
 
 private:
     /**
-     * When a duration cannot be represented as a single power-of-two value, multiple
-     * space-separated values that add up to the total duration may be used.
+     * Records the duration of a feature using the relative durational values provided
+     * by the data.DURATION datatype.
      **/
     data_DURATION m_dur;
 
