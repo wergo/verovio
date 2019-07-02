@@ -1596,16 +1596,24 @@ void MusicXmlInput::ReadMusicXmlNote(pugi::xml_node node, Measure *measure, std:
     if (!m_ClefChangeStack.empty()) {
         std::vector<musicxml::ClefChange>::iterator iter;
         for (iter = m_ClefChangeStack.begin(); iter != m_ClefChangeStack.end(); ++iter) {
-            if (iter->m_measureNum == measureNum && iter->m_staff == staff && iter->m_scoreOnset == m_durTotal
+            if (iter->m_measureNum == measureNum && iter->m_staff == staff && iter->m_scoreOnset <= m_durTotal
                 && !isChord) {
                 if (iter->isFirst) { // add clef when first in staff
                     AddLayerElement(layer, iter->m_clef);
                     iter->isFirst = false;
                 }
                 else {
-                    Clef *sameasClef = new Clef(); // add clef with @sameas referring to original clef
-                    sameasClef->SetSameas("#" + iter->m_clef->GetUuid());
-                    AddLayerElement(layer, sameasClef);
+                    Clef *existingClef = dynamic_cast<Clef *>(layer->FindChildByType(CLEF));
+                    // add a @sameas clef, only if that layer does not have the original or a @sameas clef
+                    if (existingClef == NULL
+                        || (existingClef->GetUuid().compare(iter->m_clef->GetUuid()) != 0
+                            && existingClef->GetSameas().compare(
+                                   1, iter->m_clef->GetUuid().size(), iter->m_clef->GetUuid())
+                                != 0)) {
+                        Clef *sameasClef = new Clef(); // add clef with @sameas referring to original clef
+                        sameasClef->SetSameas("#" + iter->m_clef->GetUuid());
+                        AddLayerElement(layer, sameasClef);
+                    }
                 }
             }
         }
