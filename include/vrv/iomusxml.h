@@ -43,6 +43,7 @@ class Slur;
 class StaffGrp;
 class Tempo;
 class Tie;
+class Trill;
 
 //----------------------------------------------------------------------------
 // namespace for local MusicXml classes
@@ -363,6 +364,8 @@ private:
     std::vector<musicxml::ClefChange> m_ClefChangeStack;
     /* stack of new arpeggios that get more notes added. */
     std::vector<std::pair<Arpeg *, musicxml::OpenArpeggio> > m_ArpeggioStack;
+    /* stack for trills with an open wavy line to be closed (trill, measure count, number) */
+    std::vector<std::tuple<Trill *, int, int> > m_trillStack;
     /* a map for the measure counts storing the index of each measure created */
     std::map<Measure *, int> m_measureCounts;
 };

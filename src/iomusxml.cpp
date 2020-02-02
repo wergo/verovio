@@ -1077,6 +1077,14 @@ bool MusicXmlInput::ReadMusicXmlPart(pugi::xml_node node, Section *section, int 
         }
         m_bracketStack.clear();
     }
+    if (!m_trillStack.empty()) { // open trills without ending of wavy-line
+        std::vector<std::tuple<Trill *, int, int> >::iterator iter;
+        for (iter = m_trillStack.begin(); iter != m_trillStack.end(); ++iter) {
+            LogWarning(
+                "MusicXML import: No wavy-line ending found for trill %s.", std::get<0>(*iter)->GetUuid().c_str());
+        }
+        m_trillStack.clear();
+    }
 
     return false;
 }
@@ -2342,7 +2350,7 @@ void MusicXmlInput::ReadMusicXmlNote(pugi::xml_node node, Measure *measure, std:
             mordent->AttPlacement::StrToStaffrel(xmlMordentInv.node().attribute("placement").as_string()));
     }
 
-    // trill
+    // trill (optionally with wavy-line)
     pugi::xpath_node xmlTrill = notations.node().select_node("ornaments/trill-mark");
     if (xmlTrill) {
         Trill *trill = new Trill();
@@ -2353,6 +2361,30 @@ void MusicXmlInput::ReadMusicXmlNote(pugi::xml_node node, Measure *measure, std:
         trill->SetColor(xmlTrill.node().attribute("color").as_string());
         // place
         trill->SetPlace(trill->AttPlacement::StrToStaffrel(xmlTrill.node().attribute("placement").as_string()));
+        pugi::xpath_node xmlWavyline = notations.node().select_node("ornaments/wavy-line");
+        if (xmlWavyline) { //
+            int number = xmlWavyline.node().attribute("number").as_int();
+            std::string type = xmlWavyline.node().attribute("type").as_string();
+            if (type.compare("start") == 0)
+                m_trillStack.push_back(std::make_tuple(trill, m_measureCounts.at(measure), number));
+        }
+    }
+
+    // end a wavy line and add it to trill as tstamp2 attribute
+    pugi::xpath_node xmlWavyline = notations.node().select_node("ornaments/wavy-line");
+    if (xmlWavyline) { //
+        int number = xmlWavyline.node().attribute("number").as_int();
+        std::string type = xmlWavyline.node().attribute("type").as_string();
+        std::vector<std::tuple<Trill *, int, int> >::iterator iter;
+        for (iter = m_trillStack.begin(); iter != m_trillStack.end(); ++iter) {
+            if (type.compare("stop") == 0 && number == std::get<2>(*iter)) {
+                int measureDifference = m_measureCounts.at(measure) - std::get<1>(*iter);
+                std::get<0>(*iter)->SetTstamp2(std::pair<int, double>(
+                    measureDifference, (double)(m_durTotal) * (double)m_meterUnit / (double)(4 * m_ppq) + 1.0));
+                // iter->first->SetEndid(m_ID);
+                m_trillStack.erase(iter--);
+            }
+        }
     }
 
     // turn
