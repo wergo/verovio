@@ -1732,7 +1732,8 @@ void MusicXmlInput::ReadMusicXmlDirection(
             m_controlElements.push_back(std::make_pair(measureNum, pedal));
             m_pedalStack.push_back(pedal);
         }
-        else LogWarning("MusicXML import: pedal lines are not supported");
+        else
+            LogWarning("MusicXML import: pedal lines are not supported");
     }
 
     // Principal voice
@@ -2020,7 +2021,8 @@ void MusicXmlInput::ReadMusicXmlNote(
                 space->SetDur(ConvertTypeToDur(typeStr));
             }
             // this should be mSpace
-            else space->SetDur(DURATION_1);
+            else
+                space->SetDur(DURATION_1);
             AddLayerElement(layer, space);
         }
         // we assume /note without /type or with duration of an entire bar to be mRest
@@ -2409,6 +2411,7 @@ void MusicXmlInput::ReadMusicXmlNote(
         pugi::xpath_node xmlWavyline = notations.node().select_node("ornaments/wavy-line");
         if (xmlWavyline) { //
             int number = xmlWavyline.node().attribute("number").as_int();
+            number = (number < 1) ? 1 : number;
             std::string type = xmlWavyline.node().attribute("type").as_string();
             if (type.compare("start") == 0)
                 m_trillStack.push_back(std::make_tuple(trill, m_measureCounts.at(measure), number));
@@ -2419,6 +2422,7 @@ void MusicXmlInput::ReadMusicXmlNote(
     pugi::xpath_node xmlWavyline = notations.node().select_node("ornaments/wavy-line");
     if (xmlWavyline) { //
         int number = xmlWavyline.node().attribute("number").as_int();
+        number = (number < 1) ? 1 : number;
         std::string type = xmlWavyline.node().attribute("type").as_string();
         std::vector<std::tuple<Trill *, int, int> >::iterator iter;
         for (iter = m_trillStack.begin(); iter != m_trillStack.end(); ++iter) {
@@ -2426,7 +2430,6 @@ void MusicXmlInput::ReadMusicXmlNote(
                 int measureDifference = m_measureCounts.at(measure) - std::get<1>(*iter);
                 std::get<0>(*iter)->SetTstamp2(std::pair<int, double>(
                     measureDifference, (double)(m_durTotal) * (double)m_meterUnit / (double)(4 * m_ppq) + 1.0));
-                // iter->first->SetEndid(m_ID);
                 m_trillStack.erase(iter--);
             }
         }
