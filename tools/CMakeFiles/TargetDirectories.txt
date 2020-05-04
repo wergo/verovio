@@ -1,0 +1,8 @@
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/install/local.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/install/strip.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/install.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/list_install_components.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/rebuild_cache.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/edit_cache.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/verovio.dir
+/Users/werner/Documents/verovioWergo/tools/CMakeFiles/headers.dir
