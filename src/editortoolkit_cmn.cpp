@@ -302,8 +302,8 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
     TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
     assert(interface);
     measure->AddChild(element);
-    interface->SetStartid(startid);
-    interface->SetEndid(endid);
+    interface->SetStartid("#" + startid);
+    interface->SetEndid("#" + endid);
 
     this->m_chainedId = element->GetUuid();
 
