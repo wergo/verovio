@@ -378,7 +378,7 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
     assert(element);
     measure->AddChild(element);
 
-    if (element->IsInterface() == INTERFACE_TIME_POINT) {
+    if (element->HasInterface(INTERFACE_TIME_POINT)) {
         TimePointInterface *interface = element->GetTimePointInterface();
         assert(interface);
         if (useTstamps) {
@@ -388,7 +388,7 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
             interface->SetStartid("#" + startid);
         }
     }
-    else if (element->IsInterface() == INTERFACE_TIME_SPANNING) {
+    else if (element->HasInterface(INTERFACE_TIME_SPANNING)) {
         TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
         assert(interface);
         if (useTstamps) {
