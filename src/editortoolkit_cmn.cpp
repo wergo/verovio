@@ -376,21 +376,33 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
         return false;
     }
     assert(element);
-
-    TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
-    assert(interface);
     measure->AddChild(element);
-    if (useTstamps) {
-        interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
-        if (end) {
-            // TODO: how to calculate measure difference??
-            // interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
+
+    if (element->IsInterface() == INTERFACE_TIME_POINT) {
+        TimePointInterface *interface = element->GetTimePointInterface();
+        assert(interface);
+        if (useTstamps) {
+            interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
+        }
+        else {
+            interface->SetStartid("#" + startid);
         }
     }
-    else {
-        interface->SetStartid("#" + startid);
-        if (end) {
-            interface->SetEndid("#" + endid);
+    else if (element->IsInterface() == INTERFACE_TIME_SPANNING) {
+        TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
+        assert(interface);
+        if (useTstamps) {
+            interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
+            if (end) {
+                // TODO: how to calculate measure difference??
+                // interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
+            }
+        }
+        else {
+            interface->SetStartid("#" + startid);
+            if (end) {
+                interface->SetEndid("#" + endid);
+            }
         }
     }
 
