@@ -45,7 +45,7 @@ protected:
     bool ParseDeleteAction(jsonxx::Object param, std::string &elementId);
     bool ParseDragAction(jsonxx::Object param, std::string &elementId, int &x, int &y);
     bool ParseKeyDownAction(jsonxx::Object param, std::string &elementid, int &key, bool &shiftKey, bool &ctrlKey);
-    bool ParseInsertAction(jsonxx::Object param, std::string &elementType, std::string &startid, std::string &endid);
+    bool ParseInsertAction(jsonxx::Object param, std::string &elementType, std::string &startid, std::string &endid, std::string &text, bool &useTstamps);
     bool ParseSetAction(jsonxx::Object param, std::string &elementId, std::string &attribute, std::string &value);
     ///@}
 
@@ -56,7 +56,7 @@ protected:
     bool Delete(std::string &elementId);
     bool Drag(std::string &elementId, int x, int y);
     bool KeyDown(std::string &elementId, int key, bool shiftKey, bool ctrlKey);
-    bool Insert(std::string &elementType, std::string const &startid, std::string const &endid);
+    bool Insert(std::string &elementType, std::string const &startid, std::string const &endid, std::string const &text, bool useTstamps);
     bool Insert(std::string &elementType, std::string const &startid);
     bool Set(std::string &elementId, std::string const &attribute, std::string const &value);
     ///@}

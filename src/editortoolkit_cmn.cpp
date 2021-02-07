@@ -15,21 +15,36 @@
 
 //--------------------------------------------------------------------------------
 
+#include "breath.h"
 #include "chord.h"
 #include "clef.h"
 #include "comparison.h"
 #include "dir.h"
 #include "dynam.h"
+#include "fermata.h"
+#include "fing.h"
+#include "gliss.h"
 #include "hairpin.h"
+#include "harm.h"
+#include "iomei.h"
 #include "layer.h"
 #include "measure.h"
+#include "mordent.h"
 #include "note.h"
+#include "octave.h"
+#include "pedal.h"
 #include "page.h"
+#include "phrase.h"
 #include "rend.h"
+#include "reh.h"
 #include "rest.h"
 #include "slur.h"
 #include "staff.h"
+#include "tempo.h"
+#include "text.h"
 #include "tie.h"
+#include "trill.h"
+#include "turn.h"
 #include "vrv.h"
 
 //--------------------------------------------------------------------------------
@@ -110,13 +125,14 @@ bool EditorToolkitCMN::ParseEditorAction(const std::string &json_editorAction, b
         LogWarning("Could not parse the keyDown action");
     }
     else if (action == "insert") {
-        std::string elementType, startid, endid;
-        if (this->ParseInsertAction(json.get<jsonxx::Object>("param"), elementType, startid, endid)) {
-            if (endid == "") {
+        std::string elementType, startid, endid, text;
+        bool useTstamps = false;
+        if (this->ParseInsertAction(json.get<jsonxx::Object>("param"), elementType, startid, endid, text, useTstamps)) {
+            if (endid == "" && text == "") { // for notes etc.
                 return this->Insert(elementType, startid);
             }
             else {
-                return this->Insert(elementType, startid, endid);
+                return this->Insert(elementType, startid, endid, text, useTstamps);
             }
         }
         LogWarning("Could not parse the insert action");
@@ -153,10 +169,12 @@ bool EditorToolkitCMN::ParseDragAction(jsonxx::Object param, std::string &elemen
 }
 
 bool EditorToolkitCMN::ParseInsertAction(
-    jsonxx::Object param, std::string &elementType, std::string &startid, std::string &endid)
+    jsonxx::Object param, std::string &elementType, std::string &startid, std::string &endid, std::string &text, bool &useTstamps)
 {
     // assign optional member
     endid = "";
+    // assign optional text
+    text = "";
 
     if (!param.has<jsonxx::String>("elementType")) return false;
     elementType = param.get<jsonxx::String>("elementType");
@@ -165,6 +183,12 @@ bool EditorToolkitCMN::ParseInsertAction(
     // optional
     if (param.has<jsonxx::String>("endid")) {
         endid = param.get<jsonxx::String>("endid");
+    }
+    if (param.has<jsonxx::String>("text")) {
+        text = param.get<jsonxx::String>("text");
+    }
+    if (param.has<jsonxx::String>("useTstamps")) {
+        useTstamps = param.get<jsonxx::Boolean>("useTstamps");
     }
     return true;
 }
@@ -265,52 +289,121 @@ bool EditorToolkitCMN::KeyDown(std::string &elementId, int key, bool shiftKey, b
     return false;
 }
 
-bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &startid, std::string const &endid)
+bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &startid, std::string const &endid, std::string const &text, bool useTstamps)
 {
     if (!m_doc->GetDrawingPage()) return false;
 
     Object *start = m_doc->GetDrawingPage()->FindDescendantByUuid(startid);
-    Object *end = m_doc->GetDrawingPage()->FindDescendantByUuid(endid);
-    // Check if both start and end elements exist
-    if (!start || !end) {
-        LogMessage("Elements start and end ids '%s' and '%s' could not be found", startid.c_str(), endid.c_str());
+    // Check if start element exists
+    if (!start) {
+        LogMessage("Element start id '%s' could not be found", startid.c_str());
         return false;
     }
-    // Check if it is a LayerElement
+    // Check if start is a LayerElement
     if (!dynamic_cast<LayerElement *>(start)) {
         LogMessage("Element '%s' is not supported as start element", start->GetClassName().c_str());
         return false;
     }
-    if (!dynamic_cast<LayerElement *>(end)) {
+    
+    Object *end = m_doc->GetDrawingPage()->FindDescendantByUuid(endid);
+    if (end && !dynamic_cast<LayerElement *>(end)) {
         LogMessage("Element '%s' is not supported as end element", start->GetClassName().c_str());
         return false;
     }
 
     Measure *measure = vrv_cast<Measure *>(start->GetFirstAncestor(MEASURE));
     assert(measure);
-
+    
     ControlElement *element = NULL;
-    if (elementType == "slur") {
+    if (elementType == "breath") { // breath requires only startid and no text
+        element = new Breath();
+    }
+    else if (elementType == "dir") {
+        element = new Dir();
+    }
+    else if (elementType == "dynam") {
+        element = new Dynam();
+    }
+    else if (elementType == "fermata") {
+        element = new Fermata();
+    }
+    else if (elementType == "fing") {
+        element = new Fing();
+    }
+    else if (elementType == "gliss") {
+        element = new Gliss();
+    }
+    else if (elementType == "hairpin") {
+        element = new Hairpin();
+    }
+    else if (elementType == "harm") {
+        element = new Harm();
+    }
+    else if (elementType == "mordent") {
+        element = new Mordent();
+    }
+    else if (elementType == "octave") {
+        element = new Octave();
+    }
+    else if (elementType == "pedal") {
+        element = new Pedal();
+    }
+    else if (elementType == "phrase") {
+        element = new Phrase();
+    }
+    else if (elementType == "reh") {
+        element = new Reh();
+    }
+    else if (elementType == "slur") {
         element = new Slur();
+    }
+    else if (elementType == "tempo") {
+        element = new Tempo();
     }
     else if (elementType == "tie") {
         element = new Tie();
     }
-    else if (elementType == "hairpin") {
-        element = new Hairpin();
+    else if (elementType == "trill") {
+        element = new Trill();
+    }
+    else if (elementType == "turn") { // turn requires only startid and no text
+        element = new Turn();
     }
     else {
         LogMessage("Inserting control event '%s' is not supported", elementType.c_str());
         return false;
     }
-
     assert(element);
+    
     TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
     assert(interface);
     measure->AddChild(element);
-    interface->SetStartid("#" + startid);
-    interface->SetEndid("#" + endid);
-
+    if (useTstamps) {
+        interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
+        if (end) {
+        // how to calculate measure difference??
+        //interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
+        }
+    } else {
+        interface->SetStartid("#" + startid);
+        if (end) {
+            interface->SetEndid("#" + endid);
+        }
+    }
+    
+    if (text != "") {
+//        pugi::xml_document xmlText;
+//        pugi::xml_parse_result result = xmlText.load_string(text.c_str(), pugi::parse_fragment);
+//        LogMessage("EditorToolkit: ");
+//        for (pugi::xml_node node : xmlText.children())
+//            LogMessage("Node: %s: %s.", node.name(), node.value());
+        //    xmlText.document_element()
+        //MEIInput::ReadTextChildren(element, xmlText.document_element());
+        Text *txt = new Text();
+        txt->SetText(UTF8to16(text));
+        element->AddChild(txt);
+    }
+    
     this->m_chainedId = element->GetUuid();
     m_editInfo.import("uuid", element->GetUuid());
 
@@ -330,7 +423,7 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
     if (elementType == "note") {
         return this->InsertNote(start);
     }
-    // Check if it is a LayerElement
+    // Check if it is a Measure or a LayerElement
     if (!dynamic_cast<LayerElement *>(start)) {
         LogMessage("Element '%s' is not supported as start element", start->GetClassName().c_str());
         return false;
