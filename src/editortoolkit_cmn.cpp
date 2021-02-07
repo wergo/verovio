@@ -32,11 +32,11 @@
 #include "mordent.h"
 #include "note.h"
 #include "octave.h"
-#include "pedal.h"
 #include "page.h"
+#include "pedal.h"
 #include "phrase.h"
-#include "rend.h"
 #include "reh.h"
+#include "rend.h"
 #include "rest.h"
 #include "slur.h"
 #include "staff.h"
@@ -128,11 +128,12 @@ bool EditorToolkitCMN::ParseEditorAction(const std::string &json_editorAction, b
         std::string elementType, startid, endid, text;
         bool useTstamps = false;
         if (this->ParseInsertAction(json.get<jsonxx::Object>("param"), elementType, startid, endid, text, useTstamps)) {
-            if (endid == "" && text == "") { // for notes etc.
+            // TODO: if elementType IsControlElement()
+            if (elementType == "note") { // endid == "" && text == "") { // for notes etc.
                 return this->Insert(elementType, startid);
             }
             else {
-                return this->Insert(elementType, startid, endid, text, useTstamps);
+                return this->InsertControlElement(elementType, startid, endid, text, useTstamps);
             }
         }
         LogWarning("Could not parse the insert action");
@@ -168,8 +169,8 @@ bool EditorToolkitCMN::ParseDragAction(jsonxx::Object param, std::string &elemen
     return true;
 }
 
-bool EditorToolkitCMN::ParseInsertAction(
-    jsonxx::Object param, std::string &elementType, std::string &startid, std::string &endid, std::string &text, bool &useTstamps)
+bool EditorToolkitCMN::ParseInsertAction(jsonxx::Object param, std::string &elementType, std::string &startid,
+    std::string &endid, std::string &text, bool &useTstamps)
 {
     // assign optional member
     endid = "";
@@ -289,7 +290,8 @@ bool EditorToolkitCMN::KeyDown(std::string &elementId, int key, bool shiftKey, b
     return false;
 }
 
-bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &startid, std::string const &endid, std::string const &text, bool useTstamps)
+bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::string const &startid,
+    std::string const &endid, std::string const &text, bool useTstamps)
 {
     if (!m_doc->GetDrawingPage()) return false;
 
@@ -304,7 +306,7 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
         LogMessage("Element '%s' is not supported as start element", start->GetClassName().c_str());
         return false;
     }
-    
+
     Object *end = m_doc->GetDrawingPage()->FindDescendantByUuid(endid);
     if (end && !dynamic_cast<LayerElement *>(end)) {
         LogMessage("Element '%s' is not supported as end element", start->GetClassName().c_str());
@@ -313,7 +315,7 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
 
     Measure *measure = vrv_cast<Measure *>(start->GetFirstAncestor(MEASURE));
     assert(measure);
-    
+
     ControlElement *element = NULL;
     if (elementType == "breath") { // breath requires only startid and no text
         element = new Breath();
@@ -374,36 +376,38 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
         return false;
     }
     assert(element);
-    
+
     TimeSpanningInterface *interface = element->GetTimeSpanningInterface();
     assert(interface);
     measure->AddChild(element);
     if (useTstamps) {
         interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
         if (end) {
-        // how to calculate measure difference??
-        //interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
+            // TODO: how to calculate measure difference??
+            // interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
         }
-    } else {
+    }
+    else {
         interface->SetStartid("#" + startid);
         if (end) {
             interface->SetEndid("#" + endid);
         }
     }
-    
+
     if (text != "") {
-//        pugi::xml_document xmlText;
-//        pugi::xml_parse_result result = xmlText.load_string(text.c_str(), pugi::parse_fragment);
-//        LogMessage("EditorToolkit: ");
-//        for (pugi::xml_node node : xmlText.children())
-//            LogMessage("Node: %s: %s.", node.name(), node.value());
+        // TODO: how to parse xmlText? MEIInput::ReadTextChildren() is private...
+        // pugi::xml_document xmlText;
+        // pugi::xml_parse_result result = xmlText.load_string(text.c_str(), pugi::parse_fragment);
+        // LogMessage("EditorToolkit: ");
+        // for (pugi::xml_node node : xmlText.children())
+        //    LogMessage("Node: %s: %s.", node.name(), node.value());
         //    xmlText.document_element()
-        //MEIInput::ReadTextChildren(element, xmlText.document_element());
+        // MEIInput::ReadTextChildren(element, xmlText.document_element());
         Text *txt = new Text();
         txt->SetText(UTF8to16(text));
         element->AddChild(txt);
     }
-    
+
     this->m_chainedId = element->GetUuid();
     m_editInfo.import("uuid", element->GetUuid());
 

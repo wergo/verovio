@@ -56,7 +56,7 @@ protected:
     bool Delete(std::string &elementId);
     bool Drag(std::string &elementId, int x, int y);
     bool KeyDown(std::string &elementId, int key, bool shiftKey, bool ctrlKey);
-    bool Insert(std::string &elementType, std::string const &startid, std::string const &endid, std::string const &text, bool useTstamps);
+    bool InsertControlElement(std::string &elementType, std::string const &startid, std::string const &endid, std::string const &text, bool useTstamps);
     bool Insert(std::string &elementType, std::string const &startid);
     bool Set(std::string &elementId, std::string const &attribute, std::string const &value);
     ///@}
