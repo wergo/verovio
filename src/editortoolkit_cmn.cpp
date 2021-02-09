@@ -311,6 +311,9 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
     }
 
     Object *end = m_doc->GetDrawingPage()->FindDescendantByUuid(endid);
+    if (!end) {
+        end = m_doc->FindDescendantByUuid(endid);
+    }
     if (end && !dynamic_cast<LayerElement *>(end)) {
         LogMessage("Element '%s' is not supported as end element", start->GetClassName().c_str());
         return false;
