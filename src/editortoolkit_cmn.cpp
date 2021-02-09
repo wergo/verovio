@@ -188,7 +188,7 @@ bool EditorToolkitCMN::ParseInsertAction(jsonxx::Object param, std::string &elem
     if (param.has<jsonxx::String>("text")) {
         text = param.get<jsonxx::String>("text");
     }
-    if (param.has<jsonxx::String>("useTstamps")) {
+    if (param.has<jsonxx::Boolean>("useTstamps")) {
         useTstamps = param.get<jsonxx::Boolean>("useTstamps");
     }
     return true;
@@ -296,6 +296,9 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
     if (!m_doc->GetDrawingPage()) return false;
 
     Object *start = m_doc->GetDrawingPage()->FindDescendantByUuid(startid);
+    if (!start) {
+        start = m_doc->FindDescendantByUuid(startid);
+    }
     // Check if start element exists
     if (!start) {
         LogMessage("Element start id '%s' could not be found", startid.c_str());
@@ -382,7 +385,9 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
         TimePointInterface *interface = element->GetTimePointInterface();
         assert(interface);
         if (useTstamps) {
-            interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
+            // TODO: also rest, space, ... assert(note)
+            interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset() + 1.0);
+            // interface->SetStaff(dynamic_cast<LayerElement *>(start)->GetStaff());
         }
         else {
             interface->SetStartid("#" + startid);
@@ -393,6 +398,7 @@ bool EditorToolkitCMN::InsertControlElement(std::string &elementType, std::strin
         assert(interface);
         if (useTstamps) {
             interface->SetTstamp(dynamic_cast<Note *>(start)->GetScoreTimeOnset());
+            interface->SetStaff(dynamic_cast<Note *>(start)->GetStaff());
             if (end) {
                 // TODO: how to calculate measure difference??
                 // interface->SetTstamp2(dynamic_cast<Note *>(end)->GetScoreTimeOnset());
@@ -432,6 +438,9 @@ bool EditorToolkitCMN::Insert(std::string &elementType, std::string const &start
 
     Object *start = m_doc->GetDrawingPage()->FindDescendantByUuid(startid);
     // Check if both start and end elements exist
+    if (!start) {
+        start = m_doc->FindDescendantByUuid(startid);
+    }
     if (!start) {
         LogMessage("Element start id '%s' could not be found", startid.c_str());
         return false;
