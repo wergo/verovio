@@ -49,8 +49,20 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
     for (std::string s : expansionList) {
         if (s.rfind("#", 0) == 0) s = s.substr(1, s.size() - 1); // remove trailing hash from reference
         Object *currSect = prevSect->GetParent()->FindDescendantByID(s); // find section pointer of reference string
+
+        // report existingList
+        LogWarning("ExpansionMap::Expand: existingList: ");
+        for (std::string e : existingList) {
+            LogWarning("Existing list: %s", e.c_str());
+        }
+
+        // log string and current section
+        LogWarning("ExpansionMap::Expand: current string: %s", s.c_str());
+
         if (!currSect) {
-            return;
+            // Warn about element not found and continue
+            LogWarning("ExpansionMap::Expand: Element referenced in @plist not found: %s", s.c_str());
+            continue;
         }
         if (currSect->Is(EXPANSION)) { // if reference is itself an expansion, resolve it recursively
             // remove parent from reductionList, if expansion
@@ -109,19 +121,32 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
             }
         }
     }
-    // make unused sections hidden
+
+    // report all elements in reductionList and remove them
     for (std::string r : reductionList) {
+        LogWarning("Unused section: %s (length: %d)", r.c_str(), reductionList.size());
+
         Object *currSect = prevSect->GetParent()->FindDescendantByID(r);
         assert(currSect);
-        if (currSect->Is(ENDING) || currSect->Is(SECTION)) {
-            SystemElement *tmp = dynamic_cast<SystemElement *>(currSect);
-            tmp->m_visibility = Hidden;
-        }
-        else if (currSect->Is(LEM) || currSect->Is(RDG)) {
-            EditorialElement *tmp = dynamic_cast<EditorialElement *>(currSect);
-            tmp->m_visibility = Hidden;
-        }
+
+        // erase currSect
+        int idx = currSect->GetIdx();
+        prevSect->GetParent()->DetachChild(idx);
     }
+
+    // make unused sections hidden
+    // for (std::string r : reductionList) {
+    //     Object *currSect = prevSect->GetParent()->FindDescendantByID(r);
+    //     assert(currSect);
+    //     if (currSect->Is(ENDING) || currSect->Is(SECTION)) {
+    //         SystemElement *tmp = dynamic_cast<SystemElement *>(currSect);
+    //         tmp->m_visibility = Hidden;
+    //     }
+    //     else if (currSect->Is(LEM) || currSect->Is(RDG)) {
+    //         EditorialElement *tmp = dynamic_cast<EditorialElement *>(currSect);
+    //         tmp->m_visibility = Hidden;
+    //     }
+    // }
 }
 
 bool ExpansionMap::UpdateIDs(Object *object)
