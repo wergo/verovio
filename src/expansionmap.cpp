@@ -39,6 +39,8 @@ void ExpansionMap::Reset()
 void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &existingList, Object *prevSect)
 {
     assert(prevSect);
+    assert(prevSect->GetParent());
+
     // find all siblings of expansion element to know what in MEI file
     const ArrayOfObjects &expansionSiblings = prevSect->GetParent()->GetChildren();
     std::vector<std::string> reductionList;
@@ -50,17 +52,11 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
         if (s.rfind("#", 0) == 0) s = s.substr(1, s.size() - 1); // remove trailing hash from reference
         Object *currSect = prevSect->GetParent()->FindDescendantByID(s); // find section pointer of reference string
 
-        // report existingList
-        LogWarning("ExpansionMap::Expand: existingList: ");
-        for (std::string e : existingList) {
-            LogWarning("Existing list: %s", e.c_str());
-        }
-
         // log string and current section
         LogWarning("ExpansionMap::Expand: current string: %s", s.c_str());
 
         if (!currSect) {
-            // Warn about element not found and continue
+            // Warn about referenced element not found and continue
             LogWarning("ExpansionMap::Expand: Element referenced in @plist not found: %s", s.c_str());
             continue;
         }
@@ -101,11 +97,44 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
                 // go through cloned objects, find TimePointing/SpanningInterface, PListInterface, LinkingInterface
                 this->UpdateIDs(clonedObject);
 
-                assert(prevSect->GetParent());
                 prevSect->GetParent()->InsertAfter(prevSect, clonedObject);
                 prevSect = clonedObject;
+                LogWarning("Section inserted: %s", prevSect->GetID().c_str());
             }
             else { // add to existingList, remember previous element, but do nothing else
+                LogWarning("Nothing inserted, prevSect: %s", prevSect->GetID().c_str());
+
+                // If prevSect has a next element and if it is different than the currSect, move it to after the
+                // currSect. If prevSect has no next element, move it to after the currSect.
+                bool moveCurrentElement = false;
+                int prevIdx = prevSect->GetIdx();
+                int childCount = prevSect->GetParent()->GetChildCount();
+
+                if (prevIdx < childCount - 1) {
+                    Object *nextElement = prevSect->GetParent()->GetChild(prevIdx + 1);
+                    assert(nextElement);
+                    LogWarning("Nothing inserted, next: %s", nextElement->GetID().c_str());
+                    if (nextElement->Is({ SECTION, ENDING, LEM, RDG }) && nextElement != currSect) {
+                        LogWarning("Need to move %s to the end", currSect->GetID().c_str());
+                        moveCurrentElement = true;
+                    }
+                }
+                else {
+                    LogWarning("Nothing inserted, no next! Need to move %s to the end", currSect->GetID().c_str());
+                    moveCurrentElement = true;
+                }
+
+                if (moveCurrentElement) {
+                    int currIdx = currSect->GetIdx();
+                    if (currIdx < prevIdx && prevIdx < childCount) {
+                        currSect->GetParent()->RotateChildren(currIdx, currIdx + 1, prevIdx + 1);
+                        LogWarning(
+                            "Section '%s' moved to after '%s'", currSect->GetID().c_str(), prevSect->GetID().c_str());
+                    }
+                    else {
+                        LogWarning("Should move, but currIdx >= prevIdx");
+                    }
+                }
                 prevSect = currSect;
                 existingList.push_back(s);
             }
@@ -124,7 +153,7 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
 
     // report all elements in reductionList and remove them
     for (std::string r : reductionList) {
-        LogWarning("Unused section: %s (length: %d)", r.c_str(), reductionList.size());
+        LogWarning("Unused section to be deleted: %s (length: %d)", r.c_str(), reductionList.size());
 
         Object *currSect = prevSect->GetParent()->FindDescendantByID(r);
         assert(currSect);
