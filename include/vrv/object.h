@@ -425,6 +425,11 @@ public:
     void InsertChild(Object *element, int idx);
 
     /**
+     * Rotates the child elements of the object, using std::rotate() with the given indices.
+     */
+    void RotateChildren(int first, int middle, int last);
+
+    /**
      * Detach the child at the idx position (NULL if not found)
      * The parent pointer is set to NULL.
      */

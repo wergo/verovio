@@ -9,6 +9,7 @@
 
 //----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <iostream>
@@ -558,6 +559,11 @@ void Object::InsertChild(Object *element, int idx)
     }
     ArrayOfObjects::iterator iter = m_children.begin();
     m_children.insert(iter + (idx), element);
+}
+
+void Object::RotateChildren(int first, int middle, int last)
+{
+    std::rotate(m_children.begin() + first, m_children.begin() + middle, m_children.begin() + last);
 }
 
 Object *Object::DetachChild(int idx)
