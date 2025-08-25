@@ -10,6 +10,7 @@
 //----------------------------------------------------------------------------
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <math.h>
 
@@ -114,7 +115,7 @@ void View::DrawTabNote(DeviceContext *dc, LayerElement *element, Layer *layer, S
 
         FontInfo fretTxt;
         if (!dc->UseGlobalStyling()) {
-            fretTxt.SetFaceName("Times");
+            fretTxt.SetFaceName(m_doc->GetResources().GetTextFont());
         }
 
         TextDrawingParams params;
@@ -127,7 +128,8 @@ void View::DrawTabNote(DeviceContext *dc, LayerElement *element, Layer *layer, S
 
         params.m_y -= (m_doc->GetTextGlyphHeight(L'0', &fretTxt, drawingCueSize) / 2);
 
-        dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_center);
+        dc->StartText(
+            this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_center);
         this->DrawTextString(dc, fret, params);
         dc->EndText();
 
@@ -174,7 +176,8 @@ void View::DrawTabNote(DeviceContext *dc, LayerElement *element, Layer *layer, S
             int y1 = y + extend.m_ascent + lineThickness;
 
             for (int i = 0; i < overline; ++i) {
-                dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y1));
+                dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                    this->ToDeviceContextY(y1));
                 y1 += 2 * lineThickness;
             }
 
@@ -182,7 +185,8 @@ void View::DrawTabNote(DeviceContext *dc, LayerElement *element, Layer *layer, S
             y1 = y + extend.m_ascent / 2 - (strike - 1) * lineThickness;
 
             for (int i = 0; i < strike; ++i) {
-                dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y1));
+                dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                    this->ToDeviceContextY(y1));
                 y1 += 2 * lineThickness;
             }
 
@@ -190,7 +194,8 @@ void View::DrawTabNote(DeviceContext *dc, LayerElement *element, Layer *layer, S
             y1 = y - extend.m_descent - lineThickness;
 
             for (int i = 0; i < underline; ++i) {
-                dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y1));
+                dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                    this->ToDeviceContextY(y1));
                 y1 -= 2 * lineThickness;
             }
 
@@ -218,16 +223,31 @@ void View::DrawTabDurSym(DeviceContext *dc, LayerElement *element, Layer *layer,
 
     dc->StartGraphic(tabDurSym, "", tabDurSym->GetID());
 
-    if (tabDurSym->HasLoc()) {
-        const int yRel = ((staff->m_drawingLines - 1) * 2 - tabDurSym->GetLoc())
-            * m_doc->GetDrawingUnit(staff->m_drawingStaffSize);
-        tabDurSym->SetDrawingYRel(-yRel);
-    }
-    else if (staff->IsTabLuteItalian()) {
-        // make space for 7th course
-        const int yRel
-            = ((staff->m_drawingLines - 1) * 2 - 7 * 2 + 1) * m_doc->GetDrawingUnit(staff->m_drawingStaffSize);
-        tabDurSym->SetDrawingYRel(-yRel);
+    // adjust vertical position for tabDurSym@tab.line, tabDurSym@vo and tablature type
+    // tabDurSym@tab.line takes priority over tabDurSym@vo
+    if (!tabGrp->IsInBeam() && !staff->IsTabGuitar()) {
+        if (tabDurSym->HasTabLine()) {
+            const int yAdjust = (tabDurSym->GetTabLine() - staff->m_drawingLines) * 2;
+            tabDurSym->SetDrawingYRel(yAdjust * m_doc->GetDrawingUnit(staff->m_drawingStaffSize));
+        }
+        else {
+            int yAdjust = 1; // margin between staff line and rhythm sign, in half lines
+
+            // position rhythm sign according to tablature type
+            if (staff->IsTabLuteFrench() || staff->IsTabLuteGerman()) {
+                yAdjust = 2;
+            }
+            else if (staff->IsTabLuteItalian() && staff->m_drawingLines >= 6) {
+                yAdjust = 3; //  allow for >= 7 course Italian tablature
+            }
+
+            // adjust for tabDurSym@vo
+            if (tabDurSym->HasVo() && tabDurSym->GetVo().GetType() == MEASUREMENTTYPE_vu) {
+                yAdjust += std::round(tabDurSym->GetVo().GetVu());
+            }
+
+            tabDurSym->SetDrawingYRel(yAdjust * m_doc->GetDrawingUnit(staff->m_drawingStaffSize));
+        }
     }
 
     int x = element->GetDrawingX();

@@ -55,7 +55,7 @@ namespace vrv {
 static const ClassRegistrar<Measure> s_factory("measure", MEASURE);
 
 Measure::Measure(MeasureType measureMusic, int logMeasureNb)
-    : Object(MEASURE, "measure-")
+    : Object(MEASURE)
     , FacsimileInterface()
     , AttBarring()
     , AttCoordX1()
@@ -155,37 +155,34 @@ void Measure::Reset()
     m_drawingEnding = NULL;
     m_hasAlignmentRefWithMultipleLayers = false;
 
+    m_scoreTimeOnset.clear();
+    m_realTimeOnsetMilliseconds.clear();
     m_scoreTimeOffset.clear();
     m_realTimeOffsetMilliseconds.clear();
     m_currentTempo = MIDI_TEMPO;
 }
 
-bool Measure::IsSupportedChild(Object *child)
+bool Measure::IsSupportedChild(ClassId classId)
 {
-    if (child->IsControlElement()) {
-        assert(dynamic_cast<ControlElement *>(child));
+    static const std::vector<ClassId> supported{ STAFF };
+
+    if (std::find(supported.begin(), supported.end(), classId) != supported.end()) {
+        return true;
     }
-    else if (child->IsEditorialElement()) {
-        assert(dynamic_cast<EditorialElement *>(child));
+    else if (Object::IsControlElement(classId)) {
+        return true;
     }
-    else if (child->Is(STAFF)) {
-        Staff *staff = vrv_cast<Staff *>(child);
-        assert(staff);
-        if (staff && (staff->GetN() < 1)) {
-            // This is not 100% safe if we have a <app> and <rdg> with more than
-            // one staff as a previous child.
-            staff->SetN(this->GetChildCount());
-        }
+    else if (Object::IsEditorialElement(classId)) {
+        return true;
     }
     else {
         return false;
     }
-    return true;
 }
 
 void Measure::AddChildBack(Object *child)
 {
-    if (!this->IsSupportedChild(child)) {
+    if (!this->IsSupportedChild(child->GetClassId()) || !this->AddChildAdditionalCheck(child)) {
         LogError("Adding '%s' to a '%s'", child->GetClassName().c_str(), this->GetClassName().c_str());
         return;
     }
@@ -206,7 +203,21 @@ void Measure::AddChildBack(Object *child)
             }
         }
     }
-    Modify();
+    this->Modify();
+}
+
+bool Measure::AddChildAdditionalCheck(Object *child)
+{
+    if (child->Is(STAFF)) {
+        Staff *staff = vrv_cast<Staff *>(child);
+        assert(staff);
+        if (staff && (staff->GetN() < 1)) {
+            // This is not 100% safe if we have a <app> and <rdg> with more than
+            // one staff as a previous child.
+            staff->SetN(this->GetChildCount());
+        }
+    }
+    return (Object::AddChildAdditionalCheck(child));
 }
 
 int Measure::GetDrawingX() const
@@ -432,26 +443,6 @@ std::vector<Staff *> Measure::GetFirstStaffGrpStaves(ScoreDef *scoreDef)
     return staves;
 }
 
-Staff *Measure::GetTopVisibleStaff()
-{
-    return const_cast<Staff *>(std::as_const(*this).GetTopVisibleStaff());
-}
-
-const Staff *Measure::GetTopVisibleStaff() const
-{
-    const Staff *staff = NULL;
-    ListOfConstObjects staves = this->FindAllDescendantsByType(STAFF, false);
-    for (const Object *child : staves) {
-        staff = vrv_cast<const Staff *>(child);
-        assert(staff);
-        if (staff->DrawingIsVisible()) {
-            break;
-        }
-        staff = NULL;
-    }
-    return staff;
-}
-
 Staff *Measure::GetBottomVisibleStaff()
 {
     return const_cast<Staff *>(std::as_const(*this).GetBottomVisibleStaff());
@@ -479,16 +470,42 @@ int Measure::EnclosesTime(int time) const
         = m_measureAligner.GetRightAlignment()->GetTime().ToDouble() * SCORE_TIME_UNIT * 60.0 / m_currentTempo * 1000.0
         + 0.5;
     std::vector<double>::const_iterator iter;
-    for (iter = m_realTimeOffsetMilliseconds.begin(); iter != m_realTimeOffsetMilliseconds.end(); ++iter) {
+    for (iter = m_realTimeOnsetMilliseconds.begin(); iter != m_realTimeOnsetMilliseconds.end(); ++iter) {
         if ((time >= *iter) && (time <= *iter + timeDuration)) return repeat;
         repeat++;
     }
-    return 0;
+    return VRV_UNSET;
+}
+
+Fraction Measure::GetScoreTimeOnset(int repeat) const
+{
+    if (m_scoreTimeOnset.empty() || (repeat > (int)m_scoreTimeOnset.size())) return 0;
+    if (repeat == VRV_UNSET) return m_scoreTimeOnset.back();
+    assert(repeat > 0);
+    return m_scoreTimeOnset.at(repeat - 1);
+}
+
+double Measure::GetRealTimeOnsetMilliseconds(int repeat) const
+{
+    if (m_realTimeOnsetMilliseconds.empty() || (repeat > (int)m_realTimeOnsetMilliseconds.size())) return 0;
+    if (repeat == VRV_UNSET) return m_realTimeOnsetMilliseconds.back();
+    assert(repeat > 0);
+    return m_realTimeOnsetMilliseconds.at(repeat - 1);
+}
+
+Fraction Measure::GetScoreTimeOffset(int repeat) const
+{
+    if (m_scoreTimeOffset.empty() || (repeat > (int)m_scoreTimeOffset.size())) return 0;
+    if (repeat == VRV_UNSET) return m_scoreTimeOffset.back();
+    assert(repeat > 0);
+    return m_scoreTimeOffset.at(repeat - 1);
 }
 
 double Measure::GetRealTimeOffsetMilliseconds(int repeat) const
 {
-    if ((repeat < 1) || repeat > (int)m_realTimeOffsetMilliseconds.size()) return 0;
+    if (m_realTimeOffsetMilliseconds.empty() || (repeat > (int)m_realTimeOffsetMilliseconds.size())) return 0;
+    if (repeat == VRV_UNSET) return m_realTimeOffsetMilliseconds.back();
+    assert(repeat > 0);
     return m_realTimeOffsetMilliseconds.at(repeat - 1);
 }
 

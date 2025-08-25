@@ -72,7 +72,7 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
             }
             Expansion *currExpansion = vrv_cast<Expansion *>(currSect);
             assert(currExpansion);
-            Expand(currExpansion->GetPlist(), existingList, currSect);
+            this->Expand(currExpansion->GetPlist(), existingList, currSect);
         }
         else {
             if (std::find(existingList.begin(), existingList.end(), s)
@@ -101,40 +101,31 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
                 prevSect = clonedObject;
                 LogWarning("Section inserted: %s", prevSect->GetID().c_str());
             }
-            else { // add to existingList, remember previous element, but do nothing else
-                LogWarning("Nothing inserted, prevSect: %s", prevSect->GetID().c_str());
+            else { // add to existingList, remember previous element, re-order if necessary
 
-                // If prevSect has a next element and if it is different than the currSect, move it to after the
-                // currSect. If prevSect has no next element, move it to after the currSect.
                 bool moveCurrentElement = false;
                 int prevIdx = prevSect->GetIdx();
                 int childCount = prevSect->GetParent()->GetChildCount();
+                int currIdx = currSect->GetIdx();
 
+                // If prevSect has a next element and if it is different than the currSect or has no next element,
+                // move it to after the currSect.
                 if (prevIdx < childCount - 1) {
                     Object *nextElement = prevSect->GetParent()->GetChild(prevIdx + 1);
                     assert(nextElement);
-                    LogWarning("Nothing inserted, next: %s", nextElement->GetID().c_str());
                     if (nextElement->Is({ SECTION, ENDING, LEM, RDG }) && nextElement != currSect) {
-                        LogWarning("Need to move %s to the end", currSect->GetID().c_str());
                         moveCurrentElement = true;
                     }
                 }
                 else {
-                    LogWarning("Nothing inserted, no next! Need to move %s to the end", currSect->GetID().c_str());
                     moveCurrentElement = true;
                 }
 
-                if (moveCurrentElement) {
-                    int currIdx = currSect->GetIdx();
-                    if (currIdx < prevIdx && prevIdx < childCount) {
-                        currSect->GetParent()->RotateChildren(currIdx, currIdx + 1, prevIdx + 1);
-                        LogWarning(
-                            "Section '%s' moved to after '%s'", currSect->GetID().c_str(), prevSect->GetID().c_str());
-                    }
-                    else {
-                        LogWarning("Should move, but currIdx >= prevIdx");
-                    }
+                // move prevSect to after currSect
+                if (moveCurrentElement && currIdx < prevIdx && prevIdx < childCount) {
+                    currSect->GetParent()->RotateChildren(currIdx, currIdx + 1, prevIdx + 1);
                 }
+
                 prevSect = currSect;
                 existingList.push_back(s);
             }
@@ -151,31 +142,16 @@ void ExpansionMap::Expand(const xsdAnyURI_List &expansionList, xsdAnyURI_List &e
         }
     }
 
-    // report all elements in reductionList and remove them
+    // remove unused sections from structure
     for (std::string r : reductionList) {
         LogWarning("Unused section to be deleted: %s (length: %d)", r.c_str(), reductionList.size());
 
         Object *currSect = prevSect->GetParent()->FindDescendantByID(r);
         assert(currSect);
 
-        // erase currSect
         int idx = currSect->GetIdx();
         prevSect->GetParent()->DetachChild(idx);
     }
-
-    // make unused sections hidden
-    // for (std::string r : reductionList) {
-    //     Object *currSect = prevSect->GetParent()->FindDescendantByID(r);
-    //     assert(currSect);
-    //     if (currSect->Is(ENDING) || currSect->Is(SECTION)) {
-    //         SystemElement *tmp = dynamic_cast<SystemElement *>(currSect);
-    //         tmp->m_visibility = Hidden;
-    //     }
-    //     else if (currSect->Is(LEM) || currSect->Is(RDG)) {
-    //         EditorialElement *tmp = dynamic_cast<EditorialElement *>(currSect);
-    //         tmp->m_visibility = Hidden;
-    //     }
-    // }
 }
 
 bool ExpansionMap::UpdateIDs(Object *object)
@@ -250,7 +226,7 @@ bool ExpansionMap::UpdateIDs(Object *object)
             newIdString = this->GetExpansionIDsForElement(oldIdString).back();
             if (!newIdString.empty()) interface->SetSynch("#" + newIdString);
         }
-        UpdateIDs(o);
+        this->UpdateIDs(o);
     }
     return true;
 }

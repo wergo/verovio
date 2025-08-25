@@ -14,6 +14,7 @@
 
 //----------------------------------------------------------------------------
 
+#include "annotscore.h"
 #include "arpeg.h"
 #include "bboxdevicecontext.h"
 #include "beamspan.h"
@@ -76,8 +77,8 @@ void View::DrawControlElement(DeviceContext *dc, ControlElement *element, Measur
     assert(element);
 
     // For dir, dynam, fermata, and harm, we do not consider the @tstamp2 for rendering
-    if (element->Is(
-            { BEAMSPAN, BRACKETSPAN, FIGURE, GLISS, HAIRPIN, LV, OCTAVE, PHRASE, PITCHINFLECTION, SLUR, TIE })) {
+    if (element->Is({ ANNOTSCORE, BEAMSPAN, BRACKETSPAN, FIGURE, GLISS, HAIRPIN, LV, OCTAVE, PHRASE, PITCHINFLECTION,
+            SLUR, TIE })) {
         // create placeholder
         dc->StartGraphic(element, "", element->GetID());
         dc->EndGraphic(element, this);
@@ -185,7 +186,7 @@ void View::DrawTimeSpanningElement(DeviceContext *dc, Object *element, System *s
         BBoxDeviceContext *bBoxDC = vrv_cast<BBoxDeviceContext *>(dc);
         assert(bBoxDC);
         if (!bBoxDC->UpdateVerticalValues()) {
-            if (element->Is({ BRACKETSPAN, HAIRPIN, OCTAVE, PITCHINFLECTION })) return;
+            if (element->Is({ ANNOTSCORE, BRACKETSPAN, HAIRPIN, OCTAVE, PITCHINFLECTION })) return;
         }
     }
 
@@ -327,7 +328,11 @@ void View::DrawTimeSpanningElement(DeviceContext *dc, Object *element, System *s
             }
         }
 
-        if (element->Is(DIR)) {
+        if (element->Is(ANNOTSCORE)) {
+            // cast to AnnotScore check in DrawAnnotScore
+            this->DrawAnnotScore(dc, dynamic_cast<AnnotScore *>(element), x1, x2, staff, spanningType, graphic);
+        }
+        else if (element->Is(DIR)) {
             // cast to Dir check in DrawControlElementConnector
             this->DrawControlElementConnector(dc, dynamic_cast<Dir *>(element), x1, x2, staff, spanningType, graphic);
         }
@@ -444,6 +449,105 @@ bool View::HasValidTimeSpanningOrder(DeviceContext *dc, Object *element, LayerEl
     return true;
 }
 
+void View::DrawAnnotScore(
+    DeviceContext *dc, AnnotScore *annotScore, int x1, int x2, Staff *staff, char spanningType, Object *graphic)
+{
+    assert(dc);
+    assert(annotScore);
+    assert(staff);
+
+    assert(annotScore->GetStart());
+    assert(annotScore->GetEnd());
+
+    // May need to set/tweak y pos
+    const int y = annotScore->GetDrawingY();
+
+    // This has been copied from bracketSpan and is likely to be wrong
+    if (graphic) {
+        dc->ResumeGraphic(graphic, graphic->GetID());
+    }
+    else {
+        dc->StartGraphic(annotScore, "", annotScore->GetID(), SPANNING);
+    }
+
+    const int unit = m_doc->GetDrawingUnit(staff->m_drawingStaffSize);
+    const int boxHeight = annotScore->GetBoxHeight(m_doc, unit);
+    const int lineWidth = annotScore->GetLineWidth(m_doc, unit);
+    const int halfLineWidth = lineWidth / 2;
+
+    dc->SetPen(lineWidth, PEN_SOLID, 0, 0, LINECAP_BUTT, LINEJOIN_MITER);
+    Point boxOutline[4];
+    switch (spanningType) {
+        case SPANNING_START:
+            // Draw a box with an open right-hand side (to show it continues)
+            if (!annotScore->GetStart()->Is(TIMESTAMP_ATTR)) {
+                x1 -= annotScore->GetStart()->GetDrawingRadius(m_doc);
+            }
+            boxOutline[0] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y) };
+            boxOutline[1] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y) };
+            boxOutline[2] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y + boxHeight) };
+            boxOutline[3] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y + boxHeight) };
+            dc->DrawPolyline(4, boxOutline);
+            dc->SetBrush(0.5, COLOR_RED);
+            this->DrawFilledRectangle(dc, x1 + halfLineWidth, y + halfLineWidth, x2, y + boxHeight - halfLineWidth);
+            dc->ResetBrush();
+            break;
+        case SPANNING_MIDDLE:
+            // Draw a box with  both sides open (to show it continues)
+            if (!annotScore->GetStart()->Is(TIMESTAMP_ATTR)) {
+                x1 -= annotScore->GetStart()->GetDrawingRadius(m_doc);
+            }
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y));
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y + boxHeight), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y + boxHeight));
+            dc->SetBrush(0.5, COLOR_RED);
+            this->DrawFilledRectangle(dc, x1, y + halfLineWidth, x2, y + boxHeight - halfLineWidth);
+            dc->ResetBrush();
+            break;
+        case SPANNING_START_END:
+            // Draw a closed box
+            if (!annotScore->GetStart()->Is(TIMESTAMP_ATTR)) {
+                x1 -= annotScore->GetStart()->GetDrawingRadius(m_doc);
+            }
+            if (!annotScore->GetEnd()->Is(TIMESTAMP_ATTR)) {
+                x2 += annotScore->GetEnd()->GetDrawingRadius(m_doc);
+            }
+            boxOutline[0] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y) };
+            boxOutline[1] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y) };
+            boxOutline[2] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y + boxHeight) };
+            boxOutline[3] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y + boxHeight) };
+            dc->DrawPolyline(4, boxOutline, true);
+            dc->SetBrush(0.5, COLOR_RED);
+            this->DrawFilledRectangle(
+                dc, x1 + halfLineWidth, y + halfLineWidth, x2 - halfLineWidth, y + boxHeight - halfLineWidth);
+            dc->ResetBrush();
+            break;
+        case SPANNING_END:
+            // Draw a box with the left side open to show it continues from previous system
+            if (!annotScore->GetEnd()->Is(TIMESTAMP_ATTR)) {
+                x2 += annotScore->GetEnd()->GetDrawingRadius(m_doc);
+            }
+            boxOutline[0] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y) };
+            boxOutline[1] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y) };
+            boxOutline[2] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y + boxHeight) };
+            boxOutline[3] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y + boxHeight) };
+            dc->DrawPolyline(4, boxOutline);
+            dc->SetBrush(0.5, COLOR_RED);
+            this->DrawFilledRectangle(dc, x1, y + halfLineWidth, x2 - halfLineWidth, y + boxHeight - halfLineWidth);
+            dc->ResetBrush();
+            break;
+    }
+    dc->ResetPen();
+
+    if (graphic) {
+        dc->EndResumedGraphic(graphic, this);
+    }
+    else {
+        dc->EndGraphic(annotScore, this);
+    }
+}
+
 void View::DrawBracketSpan(
     DeviceContext *dc, BracketSpan *bracketSpan, int x1, int x2, Staff *staff, char spanningType, Object *graphic)
 {
@@ -478,9 +582,9 @@ void View::DrawBracketSpan(
         if (bracketSpan->GetLstartsym() != LINESTARTENDSYMBOL_none) {
             // Left hook
             Point hookLeft[3];
-            hookLeft[0] = { ToDeviceContextX(x1), ToDeviceContextY(y - unit * 2) };
-            hookLeft[1] = { ToDeviceContextX(x1), ToDeviceContextY(y) };
-            hookLeft[2] = { ToDeviceContextX(x1 + unit), ToDeviceContextY(y) };
+            hookLeft[0] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y - unit * 2) };
+            hookLeft[1] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y) };
+            hookLeft[2] = { this->ToDeviceContextX(x1 + unit), this->ToDeviceContextY(y) };
             dc->DrawPolyline(3, hookLeft);
         }
     }
@@ -491,9 +595,9 @@ void View::DrawBracketSpan(
         if (bracketSpan->GetLendsym() != LINESTARTENDSYMBOL_none) {
             // Right hook
             Point hookRight[3];
-            hookRight[0] = { ToDeviceContextX(x2), ToDeviceContextY(y - unit * 2) };
-            hookRight[1] = { ToDeviceContextX(x2), ToDeviceContextY(y) };
-            hookRight[2] = { ToDeviceContextX(x2 - unit), ToDeviceContextY(y) };
+            hookRight[0] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y - unit * 2) };
+            hookRight[1] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y) };
+            hookRight[2] = { this->ToDeviceContextX(x2 - unit), this->ToDeviceContextY(y) };
             dc->DrawPolyline(3, hookRight);
         }
     }
@@ -515,7 +619,8 @@ void View::DrawBracketSpan(
             x1 += diff / 2;
         }
         dc->SetPen(lineWidth, penStyle, 0, 0, lineCapStyle);
-        dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y), ToDeviceContextX(x2), ToDeviceContextY(y));
+        dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y), this->ToDeviceContextX(x2),
+            this->ToDeviceContextY(y));
         dc->ResetPen();
     }
 
@@ -642,28 +747,28 @@ void View::DrawHairpin(
 
     if ((startY == 0) && !niente) {
         Point p[3];
-        p[0] = { ToDeviceContextX(x2), ToDeviceContextY(y - endY / 2) };
-        p[1] = { ToDeviceContextX(x1), ToDeviceContextY(y) };
-        p[2] = { p[0].x, ToDeviceContextY(y + endY / 2) };
+        p[0] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y - endY / 2) };
+        p[1] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y) };
+        p[2] = { p[0].x, this->ToDeviceContextY(y + endY / 2) };
         dc->DrawPolyline(3, p);
     }
     else if ((endY == 0) && !niente) {
         Point p[3];
-        p[0] = { ToDeviceContextX(x1), ToDeviceContextY(y - startY / 2) };
-        p[1] = { ToDeviceContextX(x2), ToDeviceContextY(y) };
-        p[2] = { p[0].x, ToDeviceContextY(y + startY / 2) };
+        p[0] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y - startY / 2) };
+        p[1] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y) };
+        p[2] = { p[0].x, this->ToDeviceContextY(y + startY / 2) };
         dc->DrawPolyline(3, p);
     }
     else {
         if (niente) {
             dc->SetBrush(0.0);
             if (startY == 0) {
-                dc->DrawCircle(ToDeviceContextX(x1), ToDeviceContextY(y), unit / 2);
+                dc->DrawCircle(this->ToDeviceContextX(x1), this->ToDeviceContextY(y), unit / 2);
                 startY = unit * endY / (x2 - x1) / 2;
                 x1 += unit / 2;
             }
             else if (endY == 0) {
-                dc->DrawCircle(ToDeviceContextX(x2), ToDeviceContextY(y), unit / 2);
+                dc->DrawCircle(this->ToDeviceContextX(x2), this->ToDeviceContextY(y), unit / 2);
                 endY = unit * startY / (x2 - x1) / 2;
                 x2 -= unit / 2;
             }
@@ -671,11 +776,11 @@ void View::DrawHairpin(
         }
 
         Point p[2];
-        p[0] = { ToDeviceContextX(x1), ToDeviceContextY(y - startY / 2) };
-        p[1] = { ToDeviceContextX(x2), ToDeviceContextY(y - endY / 2) };
+        p[0] = { this->ToDeviceContextX(x1), this->ToDeviceContextY(y - startY / 2) };
+        p[1] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y - endY / 2) };
         dc->DrawPolyline(2, p);
-        p[0].y = ToDeviceContextY(y + startY / 2);
-        p[1].y = ToDeviceContextY(y + endY / 2);
+        p[0].y = this->ToDeviceContextY(y + startY / 2);
+        p[1].y = this->ToDeviceContextY(y + endY / 2);
         dc->DrawPolyline(2, p);
     }
     dc->ResetPen();
@@ -796,7 +901,8 @@ void View::DrawOctave(
             x2 = x1 + unit - lineWidth / 2;
         }
         else {
-            dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y1));
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y1));
         }
 
         octave->SetDrawingExtenderX(x1, x2);
@@ -806,17 +912,17 @@ void View::DrawOctave(
                 if (octave->GetLform() == LINEFORM_dotted) {
                     // make sure we have at least two dots for the dotted hook
                     dc->SetPen(lineWidth * 3 / 2, PEN_DOT, 0, std::min(gap, unit * 2 - lineWidth), LINECAP_ROUND);
-                    dc->DrawLine(
-                        ToDeviceContextX(x2), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y2));
+                    dc->DrawLine(this->ToDeviceContextX(x2), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                        this->ToDeviceContextY(y2));
                     dc->ResetPen();
                 }
                 else {
                     dc->SetPen(lineWidth, PEN_SOLID);
                     // Right hook
                     Point hookRight[3];
-                    hookRight[0] = { ToDeviceContextX(x2), ToDeviceContextY(y2) };
-                    hookRight[1] = { ToDeviceContextX(x2), ToDeviceContextY(y1) };
-                    hookRight[2] = { ToDeviceContextX(x2 - unit), ToDeviceContextY(y1) };
+                    hookRight[0] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y2) };
+                    hookRight[1] = { this->ToDeviceContextX(x2), this->ToDeviceContextY(y1) };
+                    hookRight[2] = { this->ToDeviceContextX(x2 - unit), this->ToDeviceContextY(y1) };
                     dc->DrawPolyline(3, hookRight);
                     dc->ResetPen();
                 }
@@ -890,23 +996,23 @@ void View::DrawPitchInflection(DeviceContext *dc, PitchInflection *pitchInflecti
     }
 
     Point points[3];
-    points[0].x = ToDeviceContextX(x1);
-    points[0].y = ToDeviceContextY(y1);
-    points[1].x = ToDeviceContextX(xControl);
-    points[1].y = ToDeviceContextY(yControl);
-    points[2].x = ToDeviceContextX(x2);
-    points[2].y = ToDeviceContextY(y2);
+    points[0].x = this->ToDeviceContextX(x1);
+    points[0].y = this->ToDeviceContextY(y1);
+    points[1].x = this->ToDeviceContextX(xControl);
+    points[1].y = this->ToDeviceContextY(yControl);
+    points[2].x = this->ToDeviceContextX(x2);
+    points[2].y = this->ToDeviceContextY(y2);
 
     int arrowWidth = m_doc->GetDrawingUnit(staff->m_drawingStaffSize) / 2;
     int arrowHeight = arrowWidth * 3 / 2;
     arrowHeight = (up) ? arrowHeight : -arrowHeight;
     Point arrow[3];
-    arrow[0].x = ToDeviceContextX(x2 - arrowWidth);
-    arrow[0].y = ToDeviceContextY(y2);
-    arrow[1].x = ToDeviceContextX(x2 + arrowWidth);
-    arrow[1].y = ToDeviceContextY(y2);
-    arrow[2].x = ToDeviceContextX(x2);
-    arrow[2].y = ToDeviceContextY(y2 + arrowHeight);
+    arrow[0].x = this->ToDeviceContextX(x2 - arrowWidth);
+    arrow[0].y = this->ToDeviceContextY(y2);
+    arrow[1].x = this->ToDeviceContextX(x2 + arrowWidth);
+    arrow[1].y = this->ToDeviceContextY(y2);
+    arrow[2].x = this->ToDeviceContextX(x2);
+    arrow[2].y = this->ToDeviceContextY(y2 + arrowHeight);
 
     /************** draw it **************/
 
@@ -1441,7 +1547,7 @@ void View::DrawArpeg(DeviceContext *dc, Arpeg *arpeg, Measure *measure, System *
 
         // Smufl glyphs are horizontal - Rotate them counter clockwise
         const int angle = -90;
-        dc->RotateGraphic(Point(ToDeviceContextX(x), ToDeviceContextY(y)), angle);
+        dc->RotateGraphic(Point(this->ToDeviceContextX(x), this->ToDeviceContextY(y)), angle);
 
         this->DrawSmuflLine(
             dc, orig, length, staff->m_drawingStaffSize, drawingCueSize, fillGlyph, startGlyph, endGlyph);
@@ -1614,7 +1720,7 @@ void View::DrawControlElementText(DeviceContext *dc, ControlElement *element, Me
 
     FontInfo dirTxt;
     if (!dc->UseGlobalStyling()) {
-        dirTxt.SetFaceName("Times");
+        dirTxt.SetFaceName(m_doc->GetResources().GetTextFont());
         dirTxt.SetStyle(FONTSTYLE_italic);
     }
 
@@ -1659,7 +1765,7 @@ void View::DrawControlElementText(DeviceContext *dc, ControlElement *element, Me
 
         dc->SetFont(&dirTxt);
 
-        dc->StartText(ToDeviceContextX(params.m_x - xAdjust), ToDeviceContextY(params.m_y), alignment);
+        dc->StartText(this->ToDeviceContextX(params.m_x - xAdjust), this->ToDeviceContextY(params.m_y), alignment);
         DrawTextChildren(dc, element, params);
         dc->EndText();
 
@@ -1687,7 +1793,7 @@ void View::DrawDynam(DeviceContext *dc, Dynam *dynam, Measure *measure, System *
 
     FontInfo dynamTxt;
     if (!dc->UseGlobalStyling()) {
-        dynamTxt.SetFaceName("Times");
+        dynamTxt.SetFaceName(m_doc->GetResources().GetTextFont());
         dynamTxt.SetStyle(FONTSTYLE_italic);
     }
 
@@ -1736,7 +1842,7 @@ void View::DrawDynam(DeviceContext *dc, Dynam *dynam, Measure *measure, System *
         else {
             dc->SetFont(&dynamTxt);
 
-            dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), alignment);
+            dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), alignment);
             this->DrawTextChildren(dc, dynam, params);
             dc->EndText();
 
@@ -1814,7 +1920,7 @@ void View::DrawFb(DeviceContext *dc, Staff *staff, Fb *fb, TextDrawingParams &pa
     dc->SetFont(fontDim);
 
     for (Object *current : fb->GetChildren()) {
-        dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_left);
+        dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_left);
         if (current->Is(FIGURE)) {
             // dynamic_cast assert in DrawF
             this->DrawF(dc, dynamic_cast<F *>(current), params);
@@ -1941,7 +2047,7 @@ void View::DrawFing(DeviceContext *dc, Fing *fing, Measure *measure, System *sys
 
     FontInfo fingTxt;
     if (!dc->UseGlobalStyling()) {
-        fingTxt.SetFaceName("Times");
+        fingTxt.SetFaceName(m_doc->GetResources().GetTextFont());
     }
 
     // center fingering
@@ -1963,7 +2069,7 @@ void View::DrawFing(DeviceContext *dc, Fing *fing, Measure *measure, System *sys
 
         dc->SetFont(&fingTxt);
 
-        dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), alignment);
+        dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), alignment);
         this->DrawTextChildren(dc, fing, params);
         dc->EndText();
 
@@ -2078,7 +2184,7 @@ void View::DrawGliss(DeviceContext *dc, Gliss *gliss, int x1, int x2, Staff *sta
             const int length = static_cast<int>(hypot(x2 - x1, y2 - y1));
             const double angle = RadToDeg(atan2(y1 - y2, x2 - x1));
             // Smufl glyphs are horizontal - Rotate them counter clockwise
-            dc->RotateGraphic(Point(ToDeviceContextX(x1), ToDeviceContextY(y1)), angle);
+            dc->RotateGraphic(Point(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1)), angle);
 
             const char32_t glissGlyph = SMUFL_EAAF_wiggleGlissando;
             const int height = m_doc->GetGlyphHeight(glissGlyph, staff->m_drawingStaffSize, false);
@@ -2088,18 +2194,21 @@ void View::DrawGliss(DeviceContext *dc, Gliss *gliss, int x1, int x2, Staff *sta
         }
         case LINEFORM_dashed:
             dc->SetPen(lineWidth, PEN_SHORT_DASH, 0, 0, LINECAP_ROUND);
-            dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y2));
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y2));
             dc->ResetPen();
             break;
         case LINEFORM_dotted:
             dc->SetPen(lineWidth * 3 / 2, PEN_DOT, 0, 0, LINECAP_ROUND);
-            dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y2));
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y2));
             dc->ResetPen();
             break;
         case LINEFORM_solid: [[fallthrough]];
         default: {
             dc->SetPen(lineWidth, PEN_SOLID, 0, 0, LINECAP_ROUND);
-            dc->DrawLine(ToDeviceContextX(x1), ToDeviceContextY(y1), ToDeviceContextX(x2), ToDeviceContextY(y2));
+            dc->DrawLine(this->ToDeviceContextX(x1), this->ToDeviceContextY(y1), this->ToDeviceContextX(x2),
+                this->ToDeviceContextY(y2));
             dc->ResetPen();
             break;
         }
@@ -2127,7 +2236,7 @@ void View::DrawHarm(DeviceContext *dc, Harm *harm, Measure *measure, System *sys
 
     FontInfo harmTxt;
     if (!dc->UseGlobalStyling()) {
-        harmTxt.SetFaceName("Times");
+        harmTxt.SetFaceName(m_doc->GetResources().GetTextFont());
     }
 
     data_HORIZONTALALIGNMENT alignment = harm->GetChildRendAlignment();
@@ -2159,7 +2268,7 @@ void View::DrawHarm(DeviceContext *dc, Harm *harm, Measure *measure, System *sys
 
             dc->SetFont(&harmTxt);
 
-            dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), alignment);
+            dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), alignment);
             this->DrawTextChildren(dc, harm, params);
             dc->EndText();
 
@@ -2394,7 +2503,7 @@ void View::DrawReh(DeviceContext *dc, Reh *reh, Measure *measure, System *system
 
     FontInfo rehTxt;
     if (!dc->UseGlobalStyling()) {
-        rehTxt.SetFaceName("Times");
+        rehTxt.SetFaceName(m_doc->GetResources().GetTextFont());
         rehTxt.SetWeight(FONTWEIGHT_bold);
     }
 
@@ -2431,7 +2540,7 @@ void View::DrawReh(DeviceContext *dc, Reh *reh, Measure *measure, System *system
 
     std::vector<Staff *> staffList = reh->GetTstampStaves(measure, reh);
     if (staffList.empty()) {
-        Staff *staff = measure->GetTopVisibleStaff();
+        Staff *staff = system->GetTopVisibleStaff();
         if (staff) staffList.push_back(staff);
     }
 
@@ -2453,7 +2562,7 @@ void View::DrawReh(DeviceContext *dc, Reh *reh, Measure *measure, System *system
 
         dc->SetFont(&rehTxt);
 
-        dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), alignment);
+        dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), alignment);
         this->DrawTextChildren(dc, reh, params);
         dc->EndText();
 
@@ -2539,7 +2648,7 @@ void View::DrawTempo(DeviceContext *dc, Tempo *tempo, Measure *measure, System *
 
     FontInfo tempoTxt;
     if (!dc->UseGlobalStyling()) {
-        tempoTxt.SetFaceName("Times");
+        tempoTxt.SetFaceName(m_doc->GetResources().GetTextFont());
         tempoTxt.SetWeight(FONTWEIGHT_bold);
     }
 
@@ -2572,7 +2681,7 @@ void View::DrawTempo(DeviceContext *dc, Tempo *tempo, Measure *measure, System *
 
         dc->SetFont(&tempoTxt);
 
-        dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), alignment);
+        dc->StartText(this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), alignment);
         this->DrawTextChildren(dc, tempo, params);
         dc->EndText();
 
@@ -2951,7 +3060,8 @@ void View::DrawEnding(DeviceContext *dc, Ending *ending, System *system)
             params.m_y = y1;
             params.m_pointSize = currentFont.GetPointSize();
 
-            dc->StartText(ToDeviceContextX(params.m_x), ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_left);
+            dc->StartText(
+                this->ToDeviceContextX(params.m_x), this->ToDeviceContextY(params.m_y), HORIZONTALALIGNMENT_left);
             this->DrawTextElement(dc, &text, params);
             dc->EndText();
         }
@@ -2988,15 +3098,17 @@ void View::DrawEnding(DeviceContext *dc, Ending *ending, System *system)
         }
 
         dc->SetPen(lineWidth, penStyle, 0, 0, capStyle);
-        dc->DrawLine(ToDeviceContextX(startX), ToDeviceContextY(y2), ToDeviceContextX(endX), ToDeviceContextY(y2));
+        dc->DrawLine(this->ToDeviceContextX(startX), this->ToDeviceContextY(y2), this->ToDeviceContextX(endX),
+            this->ToDeviceContextY(y2));
         if ((spanningType != SPANNING_END) && (spanningType != SPANNING_MIDDLE)
             && (ending->GetLstartsym() != LINESTARTENDSYMBOL_none)) {
-            dc->DrawLine(
-                ToDeviceContextX(startX), ToDeviceContextY(y2), ToDeviceContextX(startX), ToDeviceContextY(y1));
+            dc->DrawLine(this->ToDeviceContextX(startX), this->ToDeviceContextY(y2), this->ToDeviceContextX(startX),
+                this->ToDeviceContextY(y1));
         }
         if ((spanningType != SPANNING_START) && (spanningType != SPANNING_MIDDLE)
             && (ending->GetLendsym() != LINESTARTENDSYMBOL_none)) {
-            dc->DrawLine(ToDeviceContextX(endX), ToDeviceContextY(y2), ToDeviceContextX(endX), ToDeviceContextY(y1));
+            dc->DrawLine(this->ToDeviceContextX(endX), this->ToDeviceContextY(y2), this->ToDeviceContextX(endX),
+                this->ToDeviceContextY(y1));
         }
 
         dc->ResetPen();

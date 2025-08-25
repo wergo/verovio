@@ -56,17 +56,12 @@ thread_local std::vector<void *> FloatingObject::s_drawingObjectIds;
 // FloatingObject
 //----------------------------------------------------------------------------
 
-FloatingObject::FloatingObject() : Object(FLOATING_OBJECT, "fe")
+FloatingObject::FloatingObject() : Object(FLOATING_OBJECT)
 {
     this->Reset();
 }
 
-FloatingObject::FloatingObject(ClassId classId) : Object(classId, "fe")
-{
-    this->Reset();
-}
-
-FloatingObject::FloatingObject(ClassId classId, const std::string &classIdStr) : Object(classId, classIdStr)
+FloatingObject::FloatingObject(ClassId classId) : Object(classId)
 {
     this->Reset();
 }
@@ -219,7 +214,10 @@ FloatingPositioner::FloatingPositioner(FloatingObject *object, StaffAlignment *a
     m_alignment = alignment;
     m_spanningType = spanningType;
 
-    if (object->Is(BRACKETSPAN)) {
+    if (object->Is(ANNOTSCORE)) {
+        m_place = STAFFREL_above;
+    }
+    else if (object->Is(BRACKETSPAN)) {
         m_place = STAFFREL_above;
     }
     else if (object->Is(BREATH)) {
@@ -271,7 +269,7 @@ FloatingPositioner::FloatingPositioner(FloatingObject *object, StaffAlignment *a
     else if (object->Is(HAIRPIN)) {
         Hairpin *hairpin = vrv_cast<Hairpin *>(object);
         assert(hairpin);
-        // haripin below by default;
+        // hairpin below by default;
         m_place = (hairpin->GetPlace() != STAFFREL_NONE) ? hairpin->GetPlace() : STAFFREL_below;
     }
     else if (object->Is(HARM)) {
@@ -641,7 +639,7 @@ FloatingCurvePositioner::FloatingCurvePositioner(FloatingObject *object, StaffAl
 
 FloatingCurvePositioner::~FloatingCurvePositioner()
 {
-    ClearSpannedElements();
+    this->ClearSpannedElements();
 }
 
 void FloatingCurvePositioner::ResetPositioner()

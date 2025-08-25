@@ -74,7 +74,7 @@ Object::Object() : BoundingBox()
     if (s_objectCounter++ == 0) {
         this->SeedID();
     }
-    this->Init(OBJECT, "m-");
+    this->Init(OBJECT);
 }
 
 Object::Object(ClassId classId) : BoundingBox()
@@ -82,15 +82,7 @@ Object::Object(ClassId classId) : BoundingBox()
     if (s_objectCounter++ == 0) {
         this->SeedID();
     }
-    this->Init(classId, "m-");
-}
-
-Object::Object(ClassId classId, const std::string &classIdStr) : BoundingBox()
-{
-    if (s_objectCounter++ == 0) {
-        this->SeedID();
-    }
-    this->Init(classId, classIdStr);
+    this->Init(classId);
 }
 
 Object *Object::Clone() const
@@ -105,7 +97,6 @@ Object::Object(const Object &object) : BoundingBox(object)
     this->ResetBoundingBox(); // It does not make sense to keep the values of the BBox
 
     m_classId = object.m_classId;
-    m_classIdStr = object.m_classIdStr;
     m_parent = NULL;
 
     // Flags
@@ -148,11 +139,10 @@ Object &Object::operator=(const Object &object)
 {
     // not self assignement
     if (this != &object) {
-        ClearChildren();
+        this->ClearChildren();
         this->ResetBoundingBox(); // It does not make sense to keep the values of the BBox
 
         m_classId = object.m_classId;
-        m_classIdStr = object.m_classIdStr;
         m_parent = NULL;
         // Flags
         m_isAttribute = object.m_isAttribute;
@@ -187,15 +177,12 @@ Object &Object::operator=(const Object &object)
 
 Object::~Object()
 {
-    ClearChildren();
+    this->ClearChildren();
 }
 
-void Object::Init(ClassId classId, const std::string &classIdStr)
+void Object::Init(ClassId classId)
 {
-    assert(classIdStr.size());
-
     m_classId = classId;
-    m_classIdStr = classIdStr;
     m_parent = NULL;
     // Flags
     m_isAttribute = false;
@@ -240,7 +227,7 @@ const Resources *Object::GetDocResources() const
 
 void Object::Reset()
 {
-    ClearChildren();
+    this->ClearChildren();
     this->ResetBoundingBox();
 }
 
@@ -250,15 +237,15 @@ void Object::RegisterInterface(std::vector<AttClassId> *attClasses, InterfaceId 
     m_interfaces.push_back(interfaceId);
 }
 
-bool Object::IsMilestoneElement()
+bool Object::IsMilestoneElement() const
 {
     if (this->IsEditorialElement() || this->Is(ENDING) || this->Is(SECTION)) {
-        SystemMilestoneInterface *interface = dynamic_cast<SystemMilestoneInterface *>(this);
+        const SystemMilestoneInterface *interface = dynamic_cast<const SystemMilestoneInterface *>(this);
         assert(interface);
         return (interface->IsSystemMilestone());
     }
     else if (this->Is(MDIV) || this->Is(SCORE)) {
-        PageMilestoneInterface *interface = dynamic_cast<PageMilestoneInterface *>(this);
+        const PageMilestoneInterface *interface = dynamic_cast<const PageMilestoneInterface *>(this);
         assert(interface);
         return (interface->IsPageMilestone());
     }
@@ -296,7 +283,7 @@ void Object::MoveChildrenFrom(Object *sourceParent, int idx, bool allowTypeChang
             idx++;
         }
         else {
-            AddChild(child);
+            this->AddChild(child);
         }
     }
 }
@@ -404,7 +391,6 @@ void Object::CopyAttributesTo(Object *target) const
     AttModule::CopyCritapp(this, target);
     // AttModule::CopyEdittrans(this, target);
     AttModule::CopyExternalsymbols(this, target);
-    AttModule::CopyFrettab(this, target);
     AttModule::CopyFacsimile(this, target);
     // AttModule::CopyFigtable(this, target);
     // AttModule::CopyFingering(this, target);
@@ -418,6 +404,7 @@ void Object::CopyAttributesTo(Object *target) const
     AttModule::CopyPagebased(this, target);
     // AttModule::CopyPerformance(this, target);
     AttModule::CopyShared(this, target);
+    AttModule::CopyStringtab(this, target);
     // AttModule::CopyUsersymbols(this, target);
     AttModule::CopyVisual(this, target);
 
@@ -435,7 +422,6 @@ int Object::GetAttributes(ArrayOfStrAttr *attributes) const
     AttModule::GetCritapp(this, attributes);
     // AttModule::GetEdittrans(this, attributes);
     AttModule::GetExternalsymbols(this, attributes);
-    AttModule::GetFrettab(this, attributes);
     AttModule::GetFacsimile(this, attributes);
     // AttModule::GetFigtable(this, attributes);
     // AttModule::GetFingering(this, attributes);
@@ -449,6 +435,7 @@ int Object::GetAttributes(ArrayOfStrAttr *attributes) const
     AttModule::GetPagebased(this, attributes);
     // AttModule::GetPerformance(this, attributes);
     AttModule::GetShared(this, attributes);
+    AttModule::GetStringtab(this, attributes);
     // AttModule::GetUsersymbols(this, attributes);
     AttModule::GetVisual(this, attributes);
 
@@ -814,12 +801,14 @@ int Object::DeleteChildrenByComparison(Comparison *comparison)
 
 void Object::GenerateID()
 {
-    m_id = m_classIdStr.at(0) + Object::GenerateHashID();
+    // A random letter from a-z
+    char letter = 'a' + (s_xmlIDCounter % 26);
+    m_id = letter + Object::GenerateHashID();
 }
 
 void Object::ResetID()
 {
-    GenerateID();
+    this->GenerateID();
 }
 
 void Object::SetParent(Object *parent)
@@ -828,26 +817,24 @@ void Object::SetParent(Object *parent)
     m_parent = parent;
 }
 
-bool Object::IsSupportedChild(Object *child)
+bool Object::IsSupportedChild(ClassId classId)
 {
     // This should never happen because the method should be overridden
-    LogDebug(
-        "Method for adding %s to %s should be overridden", child->GetClassName().c_str(), this->GetClassName().c_str());
+    LogDebug("Method for adding %d to %s should be overridden", classId, this->GetClassName().c_str());
     // assert(false);
     return false;
 }
 
 void Object::AddChild(Object *child)
 {
-    if (!((child->GetClassName() == "Staff") && (this->GetClassName() == "Section"))) {
-        // temporarily allowing staff in section for issue https://github.com/MeasuringPolyphony/mp_editor/issues/62
-        if (!this->IsSupportedChild(child)) {
-            LogError("Adding '%s' to a '%s'", child->GetClassName().c_str(), this->GetClassName().c_str());
-            return;
-        }
+    if (!this->IsSupportedChild(child->GetClassId()) || !this->AddChildAdditionalCheck(child)) {
+        LogError("Adding '%s' to a '%s'", child->GetClassName().c_str(), this->GetClassName().c_str());
+        return;
     }
 
-    child->SetParent(this);
+    if (!this->IsReferenceObject()) {
+        child->SetParent(this);
+    }
     const int insertOrder = this->GetInsertOrderFor(child->GetClassId());
     // no child or no order specify, the child is appended at the end
     if (m_children.empty() || insertOrder == VRV_UNSET) {
@@ -863,7 +850,7 @@ void Object::AddChild(Object *child)
         i = std::min(i, (int)m_children.size());
         m_children.insert(m_children.begin() + i, child);
     }
-    Modify();
+    this->Modify();
 }
 
 int Object::GetInsertOrderForIn(ClassId classId, const std::vector<ClassId> &order) const
@@ -1186,24 +1173,10 @@ FunctorCode Object::AcceptEnd(ConstFunctor &functor) const
 bool Object::SkipChildren(bool visibleOnly) const
 {
     if (visibleOnly) {
-        if (this->IsEditorialElement()) {
-            const EditorialElement *editorialElement = vrv_cast<const EditorialElement *>(this);
-            assert(editorialElement);
-            if (editorialElement->m_visibility == Hidden) {
-                return true;
-            }
-        }
-        else if (this->Is(MDIV)) {
-            const Mdiv *mdiv = vrv_cast<const Mdiv *>(this);
-            assert(mdiv);
-            if (mdiv->m_visibility == Hidden) {
-                return true;
-            }
-        }
-        else if (this->IsSystemElement()) {
-            const SystemElement *systemElement = vrv_cast<const SystemElement *>(this);
-            assert(systemElement);
-            if (systemElement->m_visibility == Hidden) {
+        if (this->IsEditorialElement() || this->Is(MDIV) || this->IsSystemElement()) {
+            const VisibilityDrawingInterface *interface = this->GetVisibilityDrawingInterface();
+            assert(interface);
+            if (interface->IsHidden()) {
                 return true;
             }
         }
@@ -1216,9 +1189,9 @@ bool Object::FiltersApply(const Filters *filters, Object *object) const
     return filters ? filters->Apply(object) : true;
 }
 
-void Object::SaveObject(Output *output, bool basic)
+void Object::SaveObject(Output *output)
 {
-    SaveFunctor save(output, basic);
+    SaveFunctor save(output);
     // Special case where we want to process all objects
     save.SetVisibleOnly(false);
     this->Process(save);
@@ -1242,6 +1215,14 @@ Object *Object::FindPreviousChild(Comparison *comp, Object *start)
     FindPreviousChildByComparisonFunctor findPreviousChildByComparison(comp, start);
     this->Process(findPreviousChildByComparison);
     return const_cast<Object *>(findPreviousChildByComparison.GetElement());
+}
+
+void Object::AddPlistReference(const Object *object)
+{
+    if (!m_plistReferences) {
+        m_plistReferences = std::make_unique<ListOfConstObjects>();
+    }
+    m_plistReferences->push_back(object);
 }
 
 void Object::LogDebugTree(int maxDepth, int level)
@@ -1270,13 +1251,13 @@ void Object::SeedID(uint32_t seed)
     }
     else {
         // Deterministic start ID
-        s_xmlIDCounter = Hash(seed);
+        s_xmlIDCounter = Object::Hash(seed);
     }
 }
 
 std::string Object::GenerateHashID()
 {
-    uint32_t nr = Hash(++s_xmlIDCounter);
+    uint32_t nr = Object::Hash(++s_xmlIDCounter);
 
     return BaseEncodeInt(nr, 36);
 }

@@ -12,6 +12,7 @@
 #include <functional>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <string>
 
 //----------------------------------------------------------------------------
@@ -43,6 +44,7 @@ class StemmedDrawingInterface;
 class TextDirInterface;
 class TimePointInterface;
 class TimeSpanningInterface;
+class VisibilityDrawingInterface;
 class Zone;
 
 #define UNLIMITED_DEPTH -10000
@@ -65,7 +67,6 @@ public:
     ///@{
     Object();
     Object(ClassId classId);
-    Object(ClassId classId, const std::string &classIdStr);
     virtual ~Object();
     ClassId GetClassId() const final { return m_classId; }
     virtual std::string GetClassName() const { return "[MISSING]"; }
@@ -89,24 +90,54 @@ public:
      * Wrapper for checking if an element has a milestone start interface and also if is set as a milestone element
      */
     ///@{
-    bool IsMilestoneElement();
+    bool IsMilestoneElement() const;
     Object *GetMilestoneEnd();
     ///@}
 
     /**
      * @name Methods for checking if an object is part of a group of classId's.
+     * Used the static methods passing the object m_classId.
+     */
+    ///@{
+    bool IsControlElement() const { return Object::IsControlElement(m_classId); }
+    bool IsEditorialElement() const { return Object::IsEditorialElement(m_classId); }
+    bool IsLayerElement() const { return Object::IsLayerElement(m_classId); }
+    bool IsPageElement() const { return Object::IsPageElement(m_classId); }
+    bool IsRunningElement() const { return Object::IsRunningElement(m_classId); }
+    bool IsScoreDefElement() const { return Object::IsScoreDefElement(m_classId); }
+    bool IsSystemElement() const { return Object::IsSystemElement(m_classId); }
+    bool IsTextElement() const { return Object::IsTextElement(m_classId); }
+    ///@}
+
+    /**
+     * @name Static methods for checking if classId is part of a group of classId's.
      * For example, all LayerElement child class classId's are between LAYER_ELEMENT and LAYER_ELEMENT_max.
      * See classId enum.
      */
     ///@{
-    bool IsControlElement() const { return ((m_classId > CONTROL_ELEMENT) && (m_classId < CONTROL_ELEMENT_max)); }
-    bool IsEditorialElement() const { return ((m_classId > EDITORIAL_ELEMENT) && (m_classId < EDITORIAL_ELEMENT_max)); }
-    bool IsLayerElement() const { return ((m_classId > LAYER_ELEMENT) && (m_classId < LAYER_ELEMENT_max)); }
-    bool IsPageElement() const { return ((m_classId > PAGE_ELEMENT) && (m_classId < PAGE_ELEMENT_max)); }
-    bool IsRunningElement() const { return ((m_classId > RUNNING_ELEMENT) && (m_classId < RUNNING_ELEMENT_max)); }
-    bool IsScoreDefElement() const { return ((m_classId > SCOREDEF_ELEMENT) && (m_classId < SCOREDEF_ELEMENT_max)); }
-    bool IsSystemElement() const { return ((m_classId > SYSTEM_ELEMENT) && (m_classId < SYSTEM_ELEMENT_max)); }
-    bool IsTextElement() const { return ((m_classId > TEXT_ELEMENT) && (m_classId < TEXT_ELEMENT_max)); }
+    static bool IsControlElement(ClassId classId)
+    {
+        return ((classId > CONTROL_ELEMENT) && (classId < CONTROL_ELEMENT_max));
+    }
+    static bool IsEditorialElement(ClassId classId)
+    {
+        return ((classId > EDITORIAL_ELEMENT) && (classId < EDITORIAL_ELEMENT_max));
+    }
+    static bool IsLayerElement(ClassId classId) { return ((classId > LAYER_ELEMENT) && (classId < LAYER_ELEMENT_max)); }
+    static bool IsPageElement(ClassId classId) { return ((classId > PAGE_ELEMENT) && (classId < PAGE_ELEMENT_max)); }
+    static bool IsRunningElement(ClassId classId)
+    {
+        return ((classId > RUNNING_ELEMENT) && (classId < RUNNING_ELEMENT_max));
+    }
+    static bool IsScoreDefElement(ClassId classId)
+    {
+        return ((classId > SCOREDEF_ELEMENT) && (classId < SCOREDEF_ELEMENT_max));
+    }
+    static bool IsSystemElement(ClassId classId)
+    {
+        return ((classId > SYSTEM_ELEMENT) && (classId < SYSTEM_ELEMENT_max));
+    }
+    static bool IsTextElement(ClassId classId) { return ((classId > TEXT_ELEMENT) && (classId < TEXT_ELEMENT_max)); }
     ///@}
 
     /**
@@ -157,6 +188,8 @@ public:
     virtual const TimePointInterface *GetTimePointInterface() const { return NULL; }
     virtual TimeSpanningInterface *GetTimeSpanningInterface() { return NULL; }
     virtual const TimeSpanningInterface *GetTimeSpanningInterface() const { return NULL; }
+    virtual VisibilityDrawingInterface *GetVisibilityDrawingInterface() { return NULL; }
+    virtual const VisibilityDrawingInterface *GetVisibilityDrawingInterface() const { return NULL; }
     ///@}
 
     /**
@@ -367,7 +400,7 @@ public:
      * Base method for checking if a child can be added.
      * The method has to be overridden.
      */
-    virtual bool IsSupportedChild(Object *object);
+    virtual bool IsSupportedChild(ClassId classId);
 
     /**
      * Base method for adding children.
@@ -376,11 +409,16 @@ public:
     virtual void AddChild(Object *object);
 
     /**
+     * Additional check when adding a child.
+     */
+    virtual bool AddChildAdditionalCheck(Object *) { return true; };
+
+    /**
      * Return the child order for a the given ClassId.
      * By default, a child is added at the end, but a class can override the method to order them.
      * The overriden method specifies a static vector with the expected order of ClassIds.
      */
-    virtual int GetInsertOrderFor(ClassId classId) const { return VRV_UNSET; }
+    virtual int GetInsertOrderFor(ClassId) const { return VRV_UNSET; }
 
     /**
      * Find the order from an overriden GetInsertOrderFor method.
@@ -640,7 +678,7 @@ public:
     /**
      * Saves the object (and its children) using the specified output stream.
      */
-    void SaveObject(Output *output, bool basic);
+    void SaveObject(Output *output);
 
     /**
      * Sort the child elements using std::stable_sort
@@ -655,6 +693,16 @@ public:
     Object *FindNextChild(Comparison *comp, Object *start);
 
     Object *FindPreviousChild(Comparison *comp, Object *start);
+
+    /**
+     * @name Methods for managing the list of back-links from plist
+     */
+    ///@{
+    bool HasPlistReferences() const { return static_cast<bool>(m_plistReferences); }
+    void ResetPlistReferences() { m_plistReferences.reset(); }
+    const ListOfConstObjects *GetPlistReferences() const { return m_plistReferences.get(); }
+    void AddPlistReference(const Object *object);
+    ///@}
 
     /**
      * Main method that processes functors.
@@ -711,9 +759,9 @@ private:
     void GenerateID();
 
     /**
-     * Initialisation method taking the class id and a id prefix argument.
+     * Initialisation method taking the class id argument.
      */
-    void Init(ClassId classId, const std::string &classIdStr);
+    void Init(ClassId classId);
 
     /**
      * Helper methods for functor processing
@@ -754,7 +802,6 @@ private:
      */
     ///@{
     std::string m_id;
-    std::string m_classIdStr;
     ///@}
 
     /**
@@ -810,6 +857,12 @@ private:
      * A flag indicating if the Object is a copy created by an expanded expansion element.
      */
     bool m_isExpansion;
+
+    /**
+     * List of back-links to plist referring objects
+     * Wrapped as unique pointer to reduce memory consumption
+     */
+    std::unique_ptr<ListOfConstObjects> m_plistReferences;
 
     //----------------//
     // Static members //
@@ -909,7 +962,7 @@ protected:
      * Filter the list for a specific class.
      * For example, keep only notes in Beam
      */
-    virtual void FilterList(ListOfConstObjects &childList) const {};
+    virtual void FilterList(ListOfConstObjects &) const {};
 
 private:
     /**

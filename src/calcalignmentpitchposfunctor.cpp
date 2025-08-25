@@ -109,7 +109,8 @@ FunctorCode CalcAlignmentPitchPosFunctor::VisitLayerElement(LayerElement *layerE
             assert(staffY->m_drawingStaffDef);
             loc = staffY->m_drawingTuning->CalcPitchPos(note->GetTabCourse(), staffY->m_drawingNotationType,
                 staffY->m_drawingLines, tabGrp->GetListSize(), tabGrp->GetListIndex(note), note->GetLoc(),
-                staffY->m_drawingStaffDef->GetValign() != VERTICALALIGNMENT_bottom);
+                note->GetTabLine(), staffY->m_drawingStaffDef->GetTabAnchorline(),
+                staffY->m_drawingStaffDef->GetTabAlign() != VERTICALALIGNMENT_bottom);
         }
         else if ((note->HasPname() && (note->HasOct() || note->HasOctDefault())) || note->HasLoc()) {
             loc = PitchInterface::CalcLoc(note, layerY, layerElementY);
@@ -243,7 +244,7 @@ FunctorCode CalcAlignmentPitchPosFunctor::VisitLayerElement(LayerElement *layerE
                     loc = locAvg;
                 }
 
-                // note: bottomAlignedLoc and topAlignedLoc are only accounting for discrepencies
+                // note: bottomAlignedLoc and topAlignedLoc are only accounting for discrepancies
                 // between 8th, 16th and 32nd notes, not 64th's and on
                 // I've described how to implement 64ths and beyond below
 

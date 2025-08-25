@@ -29,7 +29,7 @@ namespace vrv {
 
 static const ClassRegistrar<Arpeg> s_factory("arpeg", ARPEG);
 
-Arpeg::Arpeg() : ControlElement(ARPEG, "arpeg-"), PlistInterface(), TimePointInterface(), AttArpegLog(), AttArpegVis()
+Arpeg::Arpeg() : ControlElement(ARPEG), PlistInterface(), TimePointInterface(), AttArpegLog(), AttArpegVis()
 {
     this->RegisterInterface(PlistInterface::GetAttClasses(), PlistInterface::IsInterface());
     this->RegisterInterface(TimePointInterface::GetAttClasses(), TimePointInterface::IsInterface());
@@ -69,7 +69,7 @@ int Arpeg::GetDrawingX() const
     const Object *measure = this->GetFirstAncestor(MEASURE);
     assert(measure);
 
-    // This will be very arbitrary positionned...
+    // This will be very arbitrary positioned...
     return measure->GetDrawingX() + this->GetDrawingXRel();
 }
 
